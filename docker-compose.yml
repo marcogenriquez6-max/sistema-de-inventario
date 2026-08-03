@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: repuestos_db
+    environment:
+      POSTGRES_USER: repuestos
+      POSTGRES_PASSWORD: repuestos_secret
+      POSTGRES_DB: repuestos_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/schema-erp.sql:/docker-entrypoint-initdb.d/02-schema-erp.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/03-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U repuestos -d repuestos_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    container_name: repuestos_api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: repuestos
+      DATABASE_PASSWORD: repuestos_secret
+      DATABASE_NAME: repuestos_db
+      DATABASE_POOL_MAX: 10
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-cambia_este_secret_access}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambia_este_secret_refresh}
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+      CORS_ORIGINS: http://localhost:8080
+      THROTTLE_TTL: 60
+      THROTTLE_LIMIT: 100
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    container_name: repuestos_web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:

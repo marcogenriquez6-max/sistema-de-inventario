@@ -1,0 +1,10 @@
+[build]
+  # Build from the frontend folder (monorepo layout)
+  command = "cd frontend && npm ci && npm run build"
+  # Publish path relative to repo root after building
+  publish = "frontend/dist/frontend"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
