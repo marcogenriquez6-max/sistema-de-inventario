@@ -1,8 +1,12 @@
 [build]
-  # Build from the frontend folder (monorepo layout)
-  command = "cd frontend && npm ci && npm run build"
-  # Publish path relative to repo root after building
-  publish = "frontend/dist/frontend"
+  # Build from the frontend folder when the site root is the frontend app folder
+  command = "npm ci && npm run build"
+  # Angular 17+ outputs to dist/frontend/browser
+  publish = "dist/frontend/browser"
+
+[build.environment]
+  NPM_CONFIG_PRODUCTION = "false"
+  NODE_VERSION = "18"
 
 [[redirects]]
   from = "/*"
