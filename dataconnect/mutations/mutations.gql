@@ -1,0 +1,23 @@
+mutation CreateProduct($sku: String!, $name: String!, $brand: String, $category: String, $stock: Int!, $salePrice: Float!) @auth(level: USER) {
+  product_insert(
+    data: {
+      sku: $sku
+      name: $name
+      brand: $brand
+      category: $category
+      stock: $stock
+      salePrice: $salePrice
+    }
+  )
+}
+
+mutation CreateCustomer($code: String!, $name: String!, $email: String, $phone: String) @auth(level: USER) {
+  customer_insert(
+    data: {
+      code: $code
+      name: $name
+      email: $email
+      phone: $phone
+    }
+  )
+}

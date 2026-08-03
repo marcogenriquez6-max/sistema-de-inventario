@@ -1,0 +1,21 @@
+query ListProducts($limit: Int) @auth(level: PUBLIC) {
+  products(limit: $limit) {
+    id
+    sku
+    name
+    brand
+    category
+    stock
+    salePrice
+  }
+}
+
+query GetCustomer($code: String!) @auth(level: PUBLIC) {
+  customers(where: { code: { eq: $code } }) {
+    id
+    code
+    name
+    email
+    phone
+  }
+}
