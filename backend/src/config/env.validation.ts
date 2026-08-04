@@ -21,6 +21,9 @@ export const envValidationSchema = Joi.object({
   REDIS_URL: Joi.string()
     .uri({ scheme: ['redis', 'rediss'] })
     .optional(),
+  DATABASE_RETRY_ATTEMPTS: Joi.number().default(30),
+  DATABASE_RETRY_DELAY: Joi.number().default(2000),
+  DATABASE_CONNECTION_TIMEOUT: Joi.number().default(5000),
   THROTTLE_TTL: Joi.number().default(60),
   THROTTLE_LIMIT: Joi.number().default(100),
 });

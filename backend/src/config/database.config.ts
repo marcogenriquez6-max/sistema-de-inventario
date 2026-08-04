@@ -14,8 +14,13 @@ export const typeOrmConfig = registerAs(
     synchronize: false,
     logging: process.env.NODE_ENV === 'development',
     autoLoadEntities: true,
+    retryAttempts: Number(process.env.DATABASE_RETRY_ATTEMPTS ?? 30),
+    retryDelay: Number(process.env.DATABASE_RETRY_DELAY ?? 2000),
     extra: {
       max: Number(process.env.DATABASE_POOL_MAX ?? 10),
+      connectionTimeoutMillis: Number(
+        process.env.DATABASE_CONNECTION_TIMEOUT ?? 5000,
+      ),
     },
   }),
 );
