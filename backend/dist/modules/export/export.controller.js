@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const export_service_1 = require("./export.service");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 let ExportController = class ExportController {
     constructor(exportService) {
         this.exportService = exportService;
@@ -52,10 +53,23 @@ __decorate([
     (0, common_1.Get)(':resource'),
     (0, roles_decorator_1.Roles)('ADMIN', 'MANAGER', 'AUDITOR', 'SELLER', 'INVENTORY_MANAGER'),
     (0, swagger_1.ApiOperation)({ summary: 'Exportar datos en CSV, XLSX o PDF' }),
-    (0, swagger_1.ApiParam)({ name: 'resource', example: 'products', description: 'Recurso a exportar' }),
-    (0, swagger_1.ApiQuery)({ name: 'format', required: false, enum: ['csv', 'xlsx', 'pdf'], description: 'Formato (default: csv)' }),
+    (0, swagger_1.ApiParam)({
+        name: 'resource',
+        example: 'products',
+        description: 'Recurso a exportar',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'format',
+        required: false,
+        enum: ['csv', 'xlsx', 'pdf'],
+        description: 'Formato (default: csv)',
+    }),
     (0, swagger_1.ApiQuery)({ name: 'q', required: false, description: 'Filtro de texto' }),
-    (0, swagger_1.ApiQuery)({ name: 'from', required: false, description: 'Fecha inicial (ISO)' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'from',
+        required: false,
+        description: 'Fecha inicial (ISO)',
+    }),
     (0, swagger_1.ApiQuery)({ name: 'to', required: false, description: 'Fecha final (ISO)' }),
     __param(0, (0, common_1.Param)('resource')),
     __param(1, (0, common_1.Query)('format')),
@@ -69,6 +83,7 @@ __decorate([
 ], ExportController.prototype, "export", null);
 exports.ExportController = ExportController = __decorate([
     (0, swagger_1.ApiTags)('Exportación'),
+    (0, require_module_decorator_1.RequireModule)('export'),
     (0, common_1.Controller)('export'),
     __metadata("design:paramtypes", [export_service_1.ExportService])
 ], ExportController);

@@ -190,7 +190,7 @@ export class ReportsComponent {
     } as ApexChart,
     series: signal<{ name: string; data: number[] }[]>([]),
     xaxis: { categories: [] as string[] },
-    colors: ['#1e6fd9'],
+    colors: ['#2563eb'],
     dataLabels: { enabled: false },
     tooltip: { y: { formatter: (v: number) => `Bs ${v.toFixed(2)}` } },
   };

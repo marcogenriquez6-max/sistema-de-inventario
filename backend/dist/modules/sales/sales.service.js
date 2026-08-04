@@ -16,6 +16,9 @@ exports.SalesService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const PDFDocument = require("pdfkit");
+const fs = require("node:fs");
+const path = require("node:path");
 const product_entity_1 = require("../catalog/product.entity");
 const sale_document_entity_1 = require("./sale-document.entity");
 const sale_item_entity_1 = require("./sale-item.entity");
@@ -132,7 +135,12 @@ let SalesService = class SalesService {
             return { document };
         });
         const docTotal = Number(result.document.total) || 0;
-        await this.notificationsService.createForRoles(['ADMIN', 'MANAGER'], 'SALE', `Nueva venta ${docNumber}`, `Venta ${dto.docType} ${docNumber} por $${docTotal.toFixed(2)} — ${result.document.items.length} línea(s)`, { docNumber, total: docTotal.toFixed(2), docType: dto.docType, userId: user.id });
+        await this.notificationsService.createForRoles(['ADMIN', 'MANAGER'], 'SALE', `Nueva venta ${docNumber}`, `Venta ${dto.docType} ${docNumber} por $${docTotal.toFixed(2)} — ${result.document.items.length} línea(s)`, {
+            docNumber,
+            total: docTotal.toFixed(2),
+            docType: dto.docType,
+            userId: user.id,
+        });
         return result;
     }
     async findAll(query) {
@@ -173,6 +181,140 @@ let SalesService = class SalesService {
             throw new domain_exceptions_1.DomainException(404, 'Documento de venta no encontrado');
         }
         return doc;
+    }
+    async pdfInvoice(id) {
+        const doc = await this.findOne(id);
+        const docTypeLabel = doc.docType === 'FACTURA' ? 'FACTURA' : 'NOTA DE VENTA';
+        const company = (await this.settingsService.get('company_name'))
+            ?.value ?? 'Distribuidora de Repuestos S.R.L.';
+        const pdf = new PDFDocument({
+            size: 'A4',
+            margin: 40,
+            bufferPages: true,
+        });
+        const chunks = [];
+        pdf.on('data', (c) => chunks.push(c));
+        const done = new Promise((resolve) => pdf.on('end', () => resolve(Buffer.concat(chunks))));
+        const money = (v) => `Bs ${Number(v).toFixed(2)}`;
+        const logoPath = path.join(process.cwd(), 'assets', 'logo.jpg');
+        if (fs.existsSync(logoPath)) {
+            pdf.image(logoPath, { fit: [56, 56] }).moveDown(0.2);
+        }
+        pdf.fontSize(20).fillColor('#1e6fd9').text(company, { align: 'left' });
+        pdf
+            .fontSize(9)
+            .fillColor('#5a6b85')
+            .text('Sistema de Ventas de Repuestos · Ventas al por mayor y menor', {
+            align: 'left',
+        });
+        pdf
+            .fontSize(9)
+            .fillColor('#5a6b85')
+            .text('NIT: 0000000000 · Tel: 000-0000', { align: 'left' });
+        pdf.moveDown(0.5);
+        pdf
+            .fontSize(16)
+            .fillColor('#17233a')
+            .text(docTypeLabel, { align: 'right' });
+        pdf
+            .fontSize(9)
+            .fillColor('#5a6b85')
+            .text(doc.docNumber, { align: 'right' });
+        pdf.moveDown(1);
+        pdf.fontSize(9).fillColor('#17233a');
+        pdf.text(`Fecha: ${new Date(doc.createdAt).toLocaleString()}`);
+        pdf.text(`Atendido por: ${doc.user?.fullName ?? '—'}`);
+        pdf.text(`Cliente: ${doc.customerName}`);
+        if (doc.customerDoc)
+            pdf.text(`Carnet/Doc: ${doc.customerDoc}`);
+        pdf.moveDown(1);
+        const left = 40;
+        const right = 595 - 40;
+        const usable = right - left;
+        const col = {
+            sku: 0.16,
+            name: 0.44,
+            qty: 0.1,
+            price: 0.15,
+            total: 0.15,
+        };
+        const w = (k) => col[k] * usable;
+        const rowH = 22;
+        const pageBottom = 760;
+        const headers = [
+            ['Código', w('sku'), 'sku'],
+            ['Descripción', w('name'), 'name'],
+            ['Cant.', w('qty'), 'qty'],
+            ['P/U', w('price'), 'price'],
+            ['Total', w('total'), 'total'],
+        ];
+        const drawTableHead = () => {
+            let x = left;
+            pdf.fontSize(8).fillColor('#ffffff');
+            for (const [h, width] of headers) {
+                pdf.rect(x, pdf.y, width, 18).fill('#1e6fd9');
+                pdf
+                    .fillColor('#ffffff')
+                    .text(h, x + 4, pdf.y + 5, { width: width - 8 });
+                x += width;
+            }
+            pdf.moveDown(1.2);
+        };
+        drawTableHead();
+        pdf.fontSize(9).fillColor('#17233a');
+        let y = pdf.y;
+        for (const it of doc.items) {
+            if (y > pageBottom) {
+                pdf.addPage();
+                pdf.y = 60;
+                drawTableHead();
+                pdf.fontSize(9).fillColor('#17233a');
+                y = pdf.y;
+            }
+            let x = left;
+            const cellY = y + 4;
+            pdf.text(String(it.productSku).slice(0, 20), x + 4, cellY, {
+                width: w('sku') - 8,
+            });
+            x += w('sku');
+            pdf.text(String(it.productName).slice(0, 46), x + 4, cellY, {
+                width: w('name') - 8,
+            });
+            x += w('name');
+            pdf.text(String(it.quantity), x + 4, cellY, { width: w('qty') - 8 });
+            x += w('qty');
+            pdf.text(money(it.unitSale), x + 4, cellY, { width: w('price') - 8 });
+            x += w('price');
+            pdf.text(money(it.lineTotal), x + 4, cellY, { width: w('total') - 8 });
+            y += rowH;
+            pdf.y = y;
+        }
+        pdf.moveDown(0.5);
+        pdf.fontSize(10);
+        const totalX = left + usable * 0.55;
+        const labelW = usable * 0.2;
+        const valX = left + usable * 0.82;
+        const drawTotal = (label, value, bold = false) => {
+            if (bold)
+                pdf.font('Helvetica-Bold');
+            pdf.text(label, totalX, pdf.y, { width: labelW, align: 'left' });
+            pdf.text(value, valX, pdf.y, { width: usable * 0.16, align: 'right' });
+            if (bold)
+                pdf.font('Helvetica');
+            pdf.moveDown(0.4);
+        };
+        drawTotal('Subtotal:', money(doc.subtotal));
+        drawTotal(`IVA (${Number(doc.taxRate).toFixed(2)}%):`, money(doc.taxAmount));
+        drawTotal('TOTAL A PAGAR:', money(doc.total), true);
+        pdf.moveDown(2);
+        pdf.fontSize(8).fillColor('#5a6b85');
+        pdf.text('Este documento fue generado por el Sistema de Ventas de Repuestos. Sin firmas y sellos no es válido para fines fiscales.', { align: 'center', width: usable });
+        pdf.text(`Sistema de Repuestos ERP · ${new Date().toLocaleString()}`, {
+            align: 'center',
+            width: usable,
+        });
+        pdf.end();
+        return done;
     }
     async voidDocument(id, reason, user, req) {
         const doc = await this.findOne(id);

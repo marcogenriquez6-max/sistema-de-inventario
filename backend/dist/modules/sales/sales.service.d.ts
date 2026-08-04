@@ -32,6 +32,7 @@ export declare class SalesService {
         q?: string;
     }): Promise<Paginated<SaleDocument>>;
     findOne(id: number): Promise<SaleDocument>;
+    pdfInvoice(id: number): Promise<Buffer>;
     voidDocument(id: number, reason: string, user: AuthUser, req: Request): Promise<SaleDocument>;
     private nextDocumentNumber;
 }

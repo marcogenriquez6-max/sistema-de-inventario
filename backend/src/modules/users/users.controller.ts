@@ -16,12 +16,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
 } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Usuarios')
+@RequireModule('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

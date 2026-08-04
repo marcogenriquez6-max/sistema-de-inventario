@@ -255,6 +255,76 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications (user_id, is_read, created_at DESC);
 
 -- ============================================================================
+-- Push notifications (Firebase Cloud Messaging)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS fcm_tokens (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token       TEXT         NOT NULL,
+    device      VARCHAR(200),
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uq_fcm_tokens_token UNIQUE (token)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fcm_tokens_user ON fcm_tokens (user_id);
+
+-- ============================================================================
+-- Chat interno
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS chat_rooms (
+    id          BIGSERIAL PRIMARY KEY,
+    type        VARCHAR(20)  NOT NULL DEFAULT 'direct',  -- direct | group | announcement
+    name        VARCHAR(150),
+    created_by  BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT ck_chat_rooms_type CHECK (type IN ('direct','group','announcement'))
+);
+
+CREATE TABLE IF NOT EXISTS chat_room_members (
+    room_id      BIGINT       NOT NULL REFERENCES chat_rooms (id) ON DELETE CASCADE,
+    user_id      BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    joined_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    last_read_at TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    PRIMARY KEY (room_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_members_user ON chat_room_members (user_id);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id         BIGSERIAL PRIMARY KEY,
+    room_id    BIGINT        NOT NULL REFERENCES chat_rooms (id) ON DELETE CASCADE,
+    sender_id  BIGINT        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    content    VARCHAR(2000) NOT NULL,
+    created_at TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_room ON chat_messages (room_id, id);
+
+-- ============================================================================
+-- Tareas (Kanban + Calendario)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS tasks (
+    id          BIGSERIAL PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    description TEXT,
+    status      VARCHAR(20)  NOT NULL DEFAULT 'todo',   -- todo | doing | done
+    priority    VARCHAR(10)  NOT NULL DEFAULT 'medium', -- low | medium | high
+    assignee_id BIGINT       REFERENCES users (id) ON DELETE SET NULL,
+    due_date    DATE,
+    board_order INT          NOT NULL DEFAULT 0,
+    created_by  BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT ck_tasks_status   CHECK (status IN ('todo','doing','done')),
+    CONSTRAINT ck_tasks_priority CHECK (priority IN ('low','medium','high'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_status   ON tasks (status);
+CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks (assignee_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks (due_date);
+
+-- ============================================================================
 -- TRIGGERS
 -- ============================================================================
 

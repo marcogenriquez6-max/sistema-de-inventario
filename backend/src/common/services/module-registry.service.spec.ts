@@ -24,7 +24,9 @@ describe('ModuleRegistryService', () => {
   });
 
   it('returns enabled modules and keeps auth/users active', () => {
-    jest.spyOn(configService, 'get').mockReturnValue('catalog,inventory,purchases');
+    jest
+      .spyOn(configService, 'get')
+      .mockReturnValue('catalog,inventory,purchases');
 
     const modules = service.getModules();
 
@@ -41,7 +43,9 @@ describe('ModuleRegistryService', () => {
     const modules = service.getModules();
     const enabled = modules.filter((module) => module.enabled);
 
-    expect(enabled.map((module) => module.slug)).toEqual(expect.arrayContaining(['auth', 'users']));
+    expect(enabled.map((module) => module.slug)).toEqual(
+      expect.arrayContaining(['auth', 'users']),
+    );
     expect(enabled.length).toBe(2);
     expect(service.getEnabledCount()).toBe(2);
   });

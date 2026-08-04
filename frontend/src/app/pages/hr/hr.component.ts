@@ -124,7 +124,7 @@ const EMPTY_FORM: EmployeeForm = {
 
       @if (showModal()) {
         <div class="backdrop" (click)="closeModal()">
-          <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal" (click)="$event.stopPropagation()" [class.submitted]="submitted()">
             <h3>{{ form().id ? 'Editar empleado' : 'Nuevo empleado' }}</h3>
             <div class="form-grid">
               <div class="field">
@@ -237,6 +237,7 @@ export class HrComponent {
   showModal = signal(false);
   form = signal<EmployeeForm>({ ...EMPTY_FORM });
   saving = signal(false);
+  submitted = signal(false);
 
   constructor() {
     this.load(1);
@@ -258,6 +259,7 @@ export class HrComponent {
 
   openNew(): void {
     this.form.set({ ...EMPTY_FORM });
+    this.submitted.set(false);
     this.showModal.set(true);
   }
 
@@ -274,6 +276,7 @@ export class HrComponent {
       hireDate: e.hireDate ?? '',
       salary: e.salary != null ? Number(e.salary) : null,
     });
+    this.submitted.set(false);
     this.showModal.set(true);
   }
 
@@ -284,7 +287,11 @@ export class HrComponent {
 
   async save(): Promise<void> {
     const f = this.form();
-    if (!f.code.trim() || !f.fullName.trim()) return;
+    if (!f.code.trim() || !f.fullName.trim()) {
+      this.submitted.set(true);
+      this.toast.error('Complete los campos obligatorios (marcados en rojo)');
+      return;
+    }
     this.saving.set(true);
     const payload = {
       code: f.code.trim(),

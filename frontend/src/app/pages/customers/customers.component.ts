@@ -8,7 +8,6 @@ import { ExportButtonComponent } from '../../shared/export-button.component';
 
 interface CustomerForm {
   id: number;
-  code: string;
   name: string;
   documentType: string;
   documentNumber: string;
@@ -20,7 +19,6 @@ interface CustomerForm {
 function emptyForm(): CustomerForm {
   return {
     id: 0,
-    code: '',
     name: '',
     documentType: '',
     documentNumber: '',
@@ -122,12 +120,8 @@ function emptyForm(): CustomerForm {
       <div class="backdrop" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
           <h3>{{ editing() ? 'Editar cliente' : 'Nuevo cliente' }}</h3>
-          <form #f="ngForm" (ngSubmit)="save(f)">
+          <form #f="ngForm" (ngSubmit)="save(f)" novalidate [class.submitted]="submitted()">
             <div class="form-grid">
-              <div class="field">
-                <label>Código *</label>
-                <input class="input" name="code" [(ngModel)]="form().code" required />
-              </div>
               <div class="field">
                 <label>Nombre *</label>
                 <input class="input" name="name" [(ngModel)]="form().name" required />
@@ -143,8 +137,8 @@ function emptyForm(): CustomerForm {
                 </select>
               </div>
               <div class="field">
-                <label>Nº de documento</label>
-                <input class="input" name="documentNumber" [(ngModel)]="form().documentNumber" />
+                <label>Nº de carnet</label>
+                <input class="input" name="documentNumber" [(ngModel)]="form().documentNumber" placeholder="Ej: 12345678" />
               </div>
               <div class="field">
                 <label>Email</label>
@@ -161,7 +155,7 @@ function emptyForm(): CustomerForm {
             </div>
             <div class="actions">
               <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving() || !f.valid">
+              <button type="submit" class="btn btn-primary" [disabled]="saving()">
                 {{ saving() ? 'Guardando…' : 'Guardar' }}
               </button>
             </div>
@@ -227,6 +221,7 @@ export class CustomersComponent {
   modalOpen = signal(false);
   editing = signal(false);
   saving = signal(false);
+  submitted = signal(false);
   form = signal<CustomerForm>(emptyForm());
 
   constructor() {
@@ -257,13 +252,13 @@ export class CustomersComponent {
   openNew(): void {
     this.form.set(emptyForm());
     this.editing.set(false);
+    this.submitted.set(false);
     this.modalOpen.set(true);
   }
 
   openEdit(c: Customer): void {
     this.form.set({
       id: c.id,
-      code: c.code,
       name: c.name,
       documentType: c.documentType ?? '',
       documentNumber: c.documentNumber ?? '',
@@ -272,6 +267,7 @@ export class CustomersComponent {
       address: c.address ?? '',
     });
     this.editing.set(true);
+    this.submitted.set(false);
     this.modalOpen.set(true);
   }
 
@@ -280,11 +276,14 @@ export class CustomersComponent {
   }
 
   async save(f: NgForm): Promise<void> {
-    if (!f.valid) return;
+    if (!f.valid) {
+      this.submitted.set(true);
+      this.toast.error('Complete los campos obligatorios (marcados en rojo)');
+      return;
+    }
     this.saving.set(true);
     const fm = this.form();
     const payload = {
-      code: fm.code,
       name: fm.name,
       documentType: fm.documentType || undefined,
       documentNumber: fm.documentNumber || undefined,

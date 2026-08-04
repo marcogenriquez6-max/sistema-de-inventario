@@ -2,38 +2,105 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   backend:
+    name: Backend - lint, build y tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: repuestos
+          POSTGRES_PASSWORD: repuestos_secret
+          POSTGRES_DB: repuestos_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U repuestos -d repuestos_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm run build
-      - run: npm run test -- --runInBand
 
+      - name: Instalar dependencias
+        working-directory: backend
+        run: npm ci
+
+      - name: Lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Build
+        working-directory: backend
+        run: npm run build
+
+      - name: Inicializar BD
+        working-directory: backend
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USER: repuestos
+          DATABASE_PASSWORD: repuestos_secret
+          DATABASE_NAME: repuestos_db
+          JWT_ACCESS_SECRET: ci_secret_access
+          JWT_REFRESH_SECRET: ci_secret_refresh
+        run: |
+          node scripts/apply-schema.js
+          node scripts/run-migration.js ../database/migrations/20260803_notifications.sql
+
+      - name: Tests unitarios
+        working-directory: backend
+        run: npm test
+
+      - name: Tests e2e
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USER: repuestos
+          DATABASE_PASSWORD: repuestos_secret
+          DATABASE_NAME: repuestos_db
+          JWT_ACCESS_SECRET: ci_secret_access
+          JWT_REFRESH_SECRET: ci_secret_refresh
+        run: npm run test:e2e
   frontend:
+    name: Frontend - build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build de producción
+        working-directory: frontend
+        run: npm run build
+
+  docker:
+    name: Build imágenes Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend
+        run: docker build -t repuestos-api ./backend
+      - name: Build frontend
+        run: docker build -t repuestos-web ./frontend

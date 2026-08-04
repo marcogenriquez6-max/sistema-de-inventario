@@ -17,11 +17,14 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const rxjs_1 = require("rxjs");
 const notifications_service_1 = require("./notifications.service");
+const fcm_service_1 = require("./fcm.service");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 let NotificationsController = class NotificationsController {
-    constructor(notifications) {
+    constructor(notifications, fcm) {
         this.notifications = notifications;
+        this.fcm = fcm;
     }
     async list(user, page, pageSize) {
         return this.notifications.list(user.id, Math.max(parseInt(page ?? '1', 10) || 1, 1), Math.min(Math.max(parseInt(pageSize ?? '20', 10) || 20, 1), 100));
@@ -40,8 +43,21 @@ let NotificationsController = class NotificationsController {
         await this.notifications.markAllRead(user.id);
         return { ok: true };
     }
+    async registerFcmToken(user, body) {
+        if (!body?.token)
+            return { ok: false, error: 'token requerido' };
+        await this.fcm.register(user.id, body.token, body.device);
+        return { ok: true };
+    }
+    async removeFcmToken(user, body) {
+        if (!body?.token)
+            return { ok: false, error: 'token requerido' };
+        await this.fcm.remove(user.id, body.token);
+        return { ok: true };
+    }
     async test(user, message) {
-        return this.notifications.create(user.id, 'TEST', 'Notificación de prueba', message ?? 'Esto es una prueba del centro de notificaciones en tiempo real.', { demo: true });
+        return this.notifications.create(user.id, 'TEST', 'Notificación de prueba', message ??
+            'Esto es una prueba del centro de notificaciones en tiempo real.', { demo: true });
     }
 };
 exports.NotificationsController = NotificationsController;
@@ -89,6 +105,26 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "markAllRead", null);
 __decorate([
+    (0, common_1.Post)('fcm-token'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Registrar token de push (Firebase Cloud Messaging)',
+    }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "registerFcmToken", null);
+__decorate([
+    (0, common_1.Post)('fcm-token/remove'),
+    (0, swagger_1.ApiOperation)({ summary: 'Eliminar token de push' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "removeFcmToken", null);
+__decorate([
     (0, common_1.Post)('test'),
     (0, roles_decorator_1.Roles)('ADMIN'),
     (0, swagger_1.ApiOperation)({ summary: 'Crear una notificación de prueba (admin)' }),
@@ -100,7 +136,9 @@ __decorate([
 ], NotificationsController.prototype, "test", null);
 exports.NotificationsController = NotificationsController = __decorate([
     (0, swagger_1.ApiTags)('Notificaciones'),
+    (0, require_module_decorator_1.RequireModule)('notifications'),
     (0, common_1.Controller)('notifications'),
-    __metadata("design:paramtypes", [notifications_service_1.NotificationsService])
+    __metadata("design:paramtypes", [notifications_service_1.NotificationsService,
+        fcm_service_1.FcmService])
 ], NotificationsController);
 //# sourceMappingURL=notifications.controller.js.map

@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ReportsService } from './reports.service';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 
 class RangeDto {
   @IsOptional()
@@ -31,6 +32,7 @@ class LowStockDto {
 }
 
 @ApiTags('Reportes')
+@RequireModule('reports')
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}

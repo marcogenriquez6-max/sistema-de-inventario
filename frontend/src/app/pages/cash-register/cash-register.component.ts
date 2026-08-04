@@ -77,7 +77,7 @@ const TYPE_CHIP: Record<string, string> = {
 
         <div class="card card-pad">
           <h3>Registrar movimiento</h3>
-          <form class="form-grid" (ngSubmit)="addMovement()">
+          <form class="form-grid" (ngSubmit)="addMovement()" novalidate>
             <div class="field">
               <label>Tipo</label>
               <select class="select" [(ngModel)]="mForm.type" name="mType">

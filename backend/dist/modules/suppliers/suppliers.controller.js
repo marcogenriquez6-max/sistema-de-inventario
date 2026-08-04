@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const suppliers_service_1 = require("./suppliers.service");
 const supplier_dto_1 = require("./dto/supplier.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let SuppliersController = class SuppliersController {
     constructor(suppliersService) {
@@ -80,6 +81,7 @@ __decorate([
 ], SuppliersController.prototype, "update", null);
 exports.SuppliersController = SuppliersController = __decorate([
     (0, swagger_1.ApiTags)('Proveedores'),
+    (0, require_module_decorator_1.RequireModule)('suppliers'),
     (0, common_1.Controller)('suppliers'),
     __metadata("design:paramtypes", [suppliers_service_1.SuppliersService])
 ], SuppliersController);

@@ -10,10 +10,14 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCustomerDto {
-  @ApiProperty({ example: 'CLI-00001' })
+  @ApiPropertyOptional({
+    example: 'CLI-00001',
+    description: 'Código interno. Si no se envía, se genera automáticamente.',
+  })
+  @IsOptional()
   @IsString()
   @MaxLength(30)
-  code: string;
+  code?: string;
 
   @ApiProperty({ example: 'Juan Pérez' })
   @IsString()

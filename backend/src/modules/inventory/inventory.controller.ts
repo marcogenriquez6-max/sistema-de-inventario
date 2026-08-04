@@ -14,6 +14,7 @@ import { InventoryService } from './inventory.service';
 import { StockEntryDto } from './dto/stock-entry.dto';
 import { AdjustmentDto } from './dto/adjustment.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
@@ -21,6 +22,7 @@ import {
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('Inventario')
+@RequireModule('inventory')
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}

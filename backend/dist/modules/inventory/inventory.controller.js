@@ -19,6 +19,7 @@ const inventory_service_1 = require("./inventory.service");
 const stock_entry_dto_1 = require("./dto/stock-entry.dto");
 const adjustment_dto_1 = require("./dto/adjustment.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 let InventoryController = class InventoryController {
@@ -70,6 +71,7 @@ __decorate([
 ], InventoryController.prototype, "kardex", null);
 exports.InventoryController = InventoryController = __decorate([
     (0, swagger_1.ApiTags)('Inventario'),
+    (0, require_module_decorator_1.RequireModule)('inventory'),
     (0, common_1.Controller)('inventory'),
     __metadata("design:paramtypes", [inventory_service_1.InventoryService])
 ], InventoryController);

@@ -13,6 +13,7 @@ import { SettingsService } from './settings.service';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
@@ -20,6 +21,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 
 @ApiTags('Configuración')
+@RequireModule('settings')
 @Controller('settings')
 export class SettingsController {
   constructor(

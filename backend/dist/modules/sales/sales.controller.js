@@ -19,6 +19,7 @@ const sales_service_1 = require("./sales.service");
 const create_sale_dto_1 = require("./dto/create-sale.dto");
 const query_sale_dto_1 = require("./dto/query-sale.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const class_validator_1 = require("class-validator");
 class VoidSaleDto {
@@ -40,6 +41,14 @@ let SalesController = class SalesController {
     }
     async findOne(id) {
         return this.salesService.findOne(id);
+    }
+    async pdf(id, res) {
+        const buffer = await this.salesService.pdfInvoice(id);
+        const filename = `venta_${id}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.end(buffer);
     }
     async void(id, dto, user, req) {
         return this.salesService.voidDocument(id, dto.reason, user, req);
@@ -79,6 +88,18 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/pdf'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'MANAGER', 'AUDITOR', 'SELLER'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Generar factura / nota de venta en PDF para el cliente',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "pdf", null);
+__decorate([
     (0, common_1.Post)(':id/void'),
     (0, roles_decorator_1.Roles)('ADMIN'),
     (0, swagger_1.ApiOperation)({ summary: 'Anular documento (solo admin)' }),
@@ -92,6 +113,7 @@ __decorate([
 ], SalesController.prototype, "void", null);
 exports.SalesController = SalesController = __decorate([
     (0, swagger_1.ApiTags)('Ventas (POS)'),
+    (0, require_module_decorator_1.RequireModule)('sales'),
     (0, common_1.Controller)('sales'),
     __metadata("design:paramtypes", [sales_service_1.SalesService])
 ], SalesController);

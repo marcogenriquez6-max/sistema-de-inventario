@@ -20,6 +20,7 @@ const create_customer_dto_1 = require("./dto/create-customer.dto");
 const update_customer_dto_1 = require("./dto/update-customer.dto");
 const query_customer_dto_1 = require("./dto/query-customer.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let CustomersController = class CustomersController {
     constructor(customersService) {
@@ -82,6 +83,7 @@ __decorate([
 ], CustomersController.prototype, "update", null);
 exports.CustomersController = CustomersController = __decorate([
     (0, swagger_1.ApiTags)('Clientes'),
+    (0, require_module_decorator_1.RequireModule)('customers'),
     (0, common_1.Controller)('customers'),
     __metadata("design:paramtypes", [customers_service_1.CustomersService])
 ], CustomersController);

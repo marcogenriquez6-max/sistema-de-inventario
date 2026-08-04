@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { QuerySaleDto } from './dto/query-sale.dto';
@@ -12,6 +12,7 @@ export declare class SalesController {
     create(dto: CreateSaleDto, user: AuthUser, req: Request): Promise<import("./sales.service").SaleResult>;
     findAll(query: QuerySaleDto): Promise<import("../../common/interfaces/paginated.interface").Paginated<import("./sale-document.entity").SaleDocument>>;
     findOne(id: number): Promise<import("./sale-document.entity").SaleDocument>;
+    pdf(id: number, res: Response): Promise<void>;
     void(id: number, dto: VoidSaleDto, user: AuthUser, req: Request): Promise<import("./sale-document.entity").SaleDocument>;
 }
 export {};

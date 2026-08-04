@@ -19,6 +19,7 @@ const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const reports_service_1 = require("./reports.service");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 class RangeDto {
 }
 __decorate([
@@ -95,6 +96,7 @@ __decorate([
 ], ReportsController.prototype, "salesByDay", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('Reportes'),
+    (0, require_module_decorator_1.RequireModule)('reports'),
     (0, common_1.Controller)('reports'),
     __metadata("design:paramtypes", [reports_service_1.ReportsService])
 ], ReportsController);

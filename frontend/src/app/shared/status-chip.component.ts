@@ -27,6 +27,9 @@ export class StatusChipComponent {
   readonly class = computed(() => MAP[this.value()?.toUpperCase()] ?? 'chip-neutral');
 
   private display(v: string): string {
-    return v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return v
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 }

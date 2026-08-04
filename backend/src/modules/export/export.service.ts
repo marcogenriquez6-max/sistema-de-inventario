@@ -272,7 +272,10 @@ export class ExportService {
     params: ExportParams,
   ): Promise<{ buffer: Buffer; mime: string; extension: string }> {
     const def = this.resources[resource];
-    if (!def) throw new BadRequestException(`Recurso de exportación no válido: ${resource}`);
+    if (!def)
+      throw new BadRequestException(
+        `Recurso de exportación no válido: ${resource}`,
+      );
     if (!['csv', 'xlsx', 'pdf'].includes(format)) {
       throw new BadRequestException(`Formato no válido: ${format}`);
     }
@@ -280,7 +283,11 @@ export class ExportService {
 
     switch (format) {
       case 'csv':
-        return { buffer: this.toCsv(def.columns, rows), mime: 'text/csv; charset=utf-8', extension: 'csv' };
+        return {
+          buffer: this.toCsv(def.columns, rows),
+          mime: 'text/csv; charset=utf-8',
+          extension: 'csv',
+        };
       case 'xlsx':
         return {
           buffer: await this.toExcel(def.columns, rows, def.title),
@@ -296,7 +303,10 @@ export class ExportService {
     }
   }
 
-  private toCsv(columns: ExportColumn[], rows: Array<Record<string, unknown>>): Buffer {
+  private toCsv(
+    columns: ExportColumn[],
+    rows: Array<Record<string, unknown>>,
+  ): Buffer {
     const esc = (v: unknown): string => {
       const s = v === null || v === undefined ? '' : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -345,11 +355,16 @@ export class ExportService {
     const doc = new PDFDocument({ size: 'A4', margin: 36, bufferPages: true });
     const chunks: Buffer[] = [];
     doc.on('data', (c: Buffer) => chunks.push(c));
-    const done = new Promise<Buffer>((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
+    const done = new Promise<Buffer>((resolve) =>
+      doc.on('end', () => resolve(Buffer.concat(chunks))),
+    );
 
     doc.fontSize(16).fillColor('#17233a').text(title, { align: 'center' });
     doc.moveDown();
-    doc.fontSize(9).fillColor('#5a6b85').text(`Generado: ${new Date().toLocaleString()}`);
+    doc
+      .fontSize(9)
+      .fillColor('#5a6b85')
+      .text(`Generado: ${new Date().toLocaleString()}`);
     doc.moveDown();
 
     const left = 36;
@@ -368,9 +383,11 @@ export class ExportService {
       doc.fontSize(8).fillColor('#ffffff');
       for (let i = 0; i < columns.length; i++) {
         doc.rect(x, doc.y, finalW[i], rowH).fill('#1e6fd9');
-        doc.fillColor('#ffffff').text(columns[i].header.slice(0, 28), x + 3, doc.y + 6, {
-          width: finalW[i] - 6,
-        });
+        doc
+          .fillColor('#ffffff')
+          .text(columns[i].header.slice(0, 28), x + 3, doc.y + 6, {
+            width: finalW[i] - 6,
+          });
         x += finalW[i];
       }
       doc.moveDown(1.1);

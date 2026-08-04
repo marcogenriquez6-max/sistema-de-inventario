@@ -13,6 +13,7 @@ export declare class CustomersService {
     constructor(customerRepo: Repository<Customer>, auditService: AuditService);
     findAll(query: QueryCustomerDto): Promise<Paginated<Customer>>;
     findOne(id: number): Promise<Customer>;
+    private generateCode;
     create(dto: CreateCustomerDto, user: AuthUser, req: Request): Promise<Customer>;
     update(id: number, dto: UpdateCustomerDto, user: AuthUser, req: Request): Promise<Customer>;
 }

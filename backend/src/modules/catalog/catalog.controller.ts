@@ -18,12 +18,14 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
 } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Catálogo')
+@RequireModule('catalog')
 @Controller('products')
 export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}

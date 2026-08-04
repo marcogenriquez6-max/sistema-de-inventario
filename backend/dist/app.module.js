@@ -40,6 +40,9 @@ const public_api_module_1 = require("./modules/public-api/public-api.module");
 const search_module_1 = require("./modules/search/search.module");
 const export_module_1 = require("./modules/export/export.module");
 const notifications_module_1 = require("./modules/notifications/notifications.module");
+const chat_module_1 = require("./modules/chat/chat.module");
+const tasks_module_1 = require("./modules/tasks/tasks.module");
+const permissions_module_1 = require("./modules/permissions/permissions.module");
 const module_registry_service_1 = require("./common/services/module-registry.service");
 let AppModule = class AppModule {
 };
@@ -91,6 +94,9 @@ exports.AppModule = AppModule = __decorate([
             search_module_1.SearchModule,
             export_module_1.ExportModule,
             notifications_module_1.NotificationsModule,
+            chat_module_1.ChatModule,
+            tasks_module_1.TasksModule,
+            permissions_module_1.PermissionsModule,
         ],
         providers: [
             { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard },

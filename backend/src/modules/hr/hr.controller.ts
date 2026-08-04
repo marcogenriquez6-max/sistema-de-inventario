@@ -15,12 +15,14 @@ import { HrService } from './hr.service';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
 } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('RR.HH.')
+@RequireModule('hr')
 @Controller('employees')
 export class HrController {
   constructor(private readonly hrService: HrService) {}

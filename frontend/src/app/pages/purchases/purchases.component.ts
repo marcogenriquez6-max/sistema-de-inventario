@@ -147,7 +147,7 @@ function emptyLine(): LineForm {
       <div class="backdrop" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
           <h3>Nueva compra</h3>
-          <form #f="ngForm" (ngSubmit)="save()">
+          <form #f="ngForm" (ngSubmit)="save()" novalidate [class.submitted]="submitted()">
             <div class="form-grid">
               <div class="field">
                 <label>Proveedor *</label>
@@ -326,6 +326,7 @@ export class PurchasesComponent {
 
   modalOpen = signal(false);
   saving = signal(false);
+  submitted = signal(false);
   form = signal<{ supplierId: number | null; invoiceNumber: string }>({
     supplierId: null,
     invoiceNumber: '',
@@ -379,6 +380,7 @@ export class PurchasesComponent {
   openNew(): void {
     this.form.set({ supplierId: null, invoiceNumber: '' });
     this.lines.set([emptyLine()]);
+    this.submitted.set(false);
     this.modalOpen.set(true);
   }
 
@@ -416,6 +418,7 @@ export class PurchasesComponent {
         unitCost: l.unitCost,
       }));
     if (!f.supplierId || items.length === 0) {
+      this.submitted.set(true);
       this.toast.error('Seleccione un proveedor y al menos una línea con producto');
       return;
     }

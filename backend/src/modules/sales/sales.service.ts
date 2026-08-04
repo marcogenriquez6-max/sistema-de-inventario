@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import * as PDFDocument from 'pdfkit';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { Product } from '../catalog/product.entity';
 import { SaleDocument } from './sale-document.entity';
 import { SaleItem } from './sale-item.entity';
@@ -180,7 +183,12 @@ export class SalesService {
       'SALE',
       `Nueva venta ${docNumber}`,
       `Venta ${dto.docType} ${docNumber} por $${docTotal.toFixed(2)} — ${result.document.items.length} línea(s)`,
-      { docNumber, total: docTotal.toFixed(2), docType: dto.docType, userId: user.id },
+      {
+        docNumber,
+        total: docTotal.toFixed(2),
+        docType: dto.docType,
+        userId: user.id,
+      },
     );
     return result;
   }
@@ -236,6 +244,166 @@ export class SalesService {
       throw new DomainException(404, 'Documento de venta no encontrado');
     }
     return doc;
+  }
+
+  /** Genera la factura / nota de venta en PDF (A4) para entregar al cliente. */
+  async pdfInvoice(id: number): Promise<Buffer> {
+    const doc = await this.findOne(id);
+    const docTypeLabel =
+      doc.docType === 'FACTURA' ? 'FACTURA' : 'NOTA DE VENTA';
+    const company =
+      (await this.settingsService.get<{ value: string }>('company_name'))
+        ?.value ?? 'Distribuidora de Repuestos S.R.L.';
+
+    const pdf = new PDFDocument({
+      size: 'A4',
+      margin: 40,
+      bufferPages: true,
+    });
+    const chunks: Buffer[] = [];
+    pdf.on('data', (c: Buffer) => chunks.push(c));
+    const done = new Promise<Buffer>((resolve) =>
+      pdf.on('end', () => resolve(Buffer.concat(chunks))),
+    );
+
+    const money = (v: string | number): string => `Bs ${Number(v).toFixed(2)}`;
+
+    const logoPath = path.join(process.cwd(), 'assets', 'logo.jpg');
+    if (fs.existsSync(logoPath)) {
+      pdf.image(logoPath, { fit: [56, 56] }).moveDown(0.2);
+    }
+
+    // Encabezado de la empresa
+    pdf.fontSize(20).fillColor('#1e6fd9').text(company, { align: 'left' });
+    pdf
+      .fontSize(9)
+      .fillColor('#5a6b85')
+      .text('Sistema de Ventas de Repuestos · Ventas al por mayor y menor', {
+        align: 'left',
+      });
+    pdf
+      .fontSize(9)
+      .fillColor('#5a6b85')
+      .text('NIT: 0000000000 · Tel: 000-0000', { align: 'left' });
+    pdf.moveDown(0.5);
+
+    // Título del documento
+    pdf
+      .fontSize(16)
+      .fillColor('#17233a')
+      .text(docTypeLabel, { align: 'right' });
+    pdf
+      .fontSize(9)
+      .fillColor('#5a6b85')
+      .text(doc.docNumber, { align: 'right' });
+    pdf.moveDown(1);
+
+    // Datos del documento y del cliente
+    pdf.fontSize(9).fillColor('#17233a');
+    pdf.text(`Fecha: ${new Date(doc.createdAt).toLocaleString()}`);
+    pdf.text(`Atendido por: ${doc.user?.fullName ?? '—'}`);
+    pdf.text(`Cliente: ${doc.customerName}`);
+    if (doc.customerDoc) pdf.text(`Carnet/Doc: ${doc.customerDoc}`);
+    pdf.moveDown(1);
+
+    // Tabla de ítems
+    const left = 40;
+    const right = 595 - 40;
+    const usable = right - left;
+    const col = {
+      sku: 0.16,
+      name: 0.44,
+      qty: 0.1,
+      price: 0.15,
+      total: 0.15,
+    };
+    const w = (k: keyof typeof col) => col[k] * usable;
+    const rowH = 22;
+    const pageBottom = 760;
+    const headers: Array<[string, number, keyof typeof col]> = [
+      ['Código', w('sku'), 'sku'],
+      ['Descripción', w('name'), 'name'],
+      ['Cant.', w('qty'), 'qty'],
+      ['P/U', w('price'), 'price'],
+      ['Total', w('total'), 'total'],
+    ];
+
+    const drawTableHead = () => {
+      let x = left;
+      pdf.fontSize(8).fillColor('#ffffff');
+      for (const [h, width] of headers) {
+        pdf.rect(x, pdf.y, width, 18).fill('#1e6fd9');
+        pdf
+          .fillColor('#ffffff')
+          .text(h, x + 4, pdf.y + 5, { width: width - 8 });
+        x += width;
+      }
+      pdf.moveDown(1.2);
+    };
+
+    drawTableHead();
+    pdf.fontSize(9).fillColor('#17233a');
+    let y = pdf.y;
+    for (const it of doc.items) {
+      if (y > pageBottom) {
+        pdf.addPage();
+        pdf.y = 60;
+        drawTableHead();
+        pdf.fontSize(9).fillColor('#17233a');
+        y = pdf.y;
+      }
+      let x = left;
+      const cellY = y + 4;
+      pdf.text(String(it.productSku).slice(0, 20), x + 4, cellY, {
+        width: w('sku') - 8,
+      });
+      x += w('sku');
+      pdf.text(String(it.productName).slice(0, 46), x + 4, cellY, {
+        width: w('name') - 8,
+      });
+      x += w('name');
+      pdf.text(String(it.quantity), x + 4, cellY, { width: w('qty') - 8 });
+      x += w('qty');
+      pdf.text(money(it.unitSale), x + 4, cellY, { width: w('price') - 8 });
+      x += w('price');
+      pdf.text(money(it.lineTotal), x + 4, cellY, { width: w('total') - 8 });
+      y += rowH;
+      pdf.y = y;
+    }
+
+    // Totales
+    pdf.moveDown(0.5);
+    pdf.fontSize(10);
+    const totalX = left + usable * 0.55;
+    const labelW = usable * 0.2;
+    const valX = left + usable * 0.82;
+    const drawTotal = (label: string, value: string, bold = false) => {
+      if (bold) pdf.font('Helvetica-Bold');
+      pdf.text(label, totalX, pdf.y, { width: labelW, align: 'left' });
+      pdf.text(value, valX, pdf.y, { width: usable * 0.16, align: 'right' });
+      if (bold) pdf.font('Helvetica');
+      pdf.moveDown(0.4);
+    };
+    drawTotal('Subtotal:', money(doc.subtotal));
+    drawTotal(
+      `IVA (${Number(doc.taxRate).toFixed(2)}%):`,
+      money(doc.taxAmount),
+    );
+    drawTotal('TOTAL A PAGAR:', money(doc.total), true);
+
+    pdf.moveDown(2);
+    pdf.fontSize(8).fillColor('#5a6b85');
+    pdf.text(
+      'Este documento fue generado por el Sistema de Ventas de Repuestos. Sin firmas y sellos no es válido para fines fiscales.',
+      { align: 'center', width: usable },
+    );
+    pdf.text(`Sistema de Repuestos ERP · ${new Date().toLocaleString()}`, {
+      align: 'center',
+      width: usable,
+    });
+
+    pdf.end();
+    return done;
   }
 
   /** Anulación de documento (no restaura stock; registra auditoría). */

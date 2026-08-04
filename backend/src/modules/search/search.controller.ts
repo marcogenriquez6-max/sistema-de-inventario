@@ -1,14 +1,19 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { SearchService, SearchResults } from './search.service';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 
 @ApiTags('Búsqueda global')
+@RequireModule('search')
 @Controller('search')
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Búsqueda global en productos, clientes, proveedores, empleados y ventas' })
+  @ApiOperation({
+    summary:
+      'Búsqueda global en productos, clientes, proveedores, empleados y ventas',
+  })
   @ApiQuery({ name: 'q', required: true, description: 'Término de búsqueda' })
   @ApiQuery({ name: 'limit', required: false, example: 8 })
   async search(

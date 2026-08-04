@@ -59,21 +59,38 @@ export class CustomersService {
     return customer;
   }
 
+  /** Genera el siguiente código CLI-XXXXX disponible. */
+  private async generateCode(): Promise<string> {
+    const prefix = 'CLI-';
+    const row = await this.customerRepo
+      .createQueryBuilder('c')
+      .select('c.code', 'code')
+      .where('c.code LIKE :prefix', { prefix: `${prefix}%` })
+      .orderBy('LENGTH(c.code)', 'DESC')
+      .addOrderBy('c.code', 'DESC')
+      .limit(1)
+      .getRawOne<{ code: string }>();
+    const last = row?.code;
+    const num = last ? Number.parseInt(last.slice(prefix.length), 10) || 0 : 0;
+    return `${prefix}${String(num + 1).padStart(5, '0')}`;
+  }
+
   async create(
     dto: CreateCustomerDto,
     user: AuthUser,
     req: Request,
   ): Promise<Customer> {
     try {
+      const code = dto.code?.trim() || (await this.generateCode());
       const customer = await this.customerRepo.save(
-        this.customerRepo.create(dto as Partial<Customer>),
+        this.customerRepo.create({ ...dto, code } as Partial<Customer>),
       );
       await this.auditService.record({
         userId: user.id,
         action: 'CUSTOMER:CREATE',
         resourceType: 'customers',
         resourceId: customer.id,
-        metadata: { code: dto.code, name: dto.name },
+        metadata: { code, name: dto.name },
         request: req,
       });
       return customer;

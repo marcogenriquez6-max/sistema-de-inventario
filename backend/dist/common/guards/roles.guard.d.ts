@@ -1,7 +1,9 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { PermissionsService } from '../../modules/permissions/permissions.service';
 export declare class RolesGuard implements CanActivate {
     private readonly reflector;
-    constructor(reflector: Reflector);
-    canActivate(context: ExecutionContext): boolean;
+    private readonly permissions;
+    constructor(reflector: Reflector, permissions: PermissionsService);
+    canActivate(context: ExecutionContext): Promise<boolean>;
 }

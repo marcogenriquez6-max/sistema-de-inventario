@@ -16,6 +16,7 @@ exports.SearchController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const search_service_1 = require("./search.service");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 let SearchController = class SearchController {
     constructor(searchService) {
         this.searchService = searchService;
@@ -28,7 +29,9 @@ let SearchController = class SearchController {
 exports.SearchController = SearchController;
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Búsqueda global en productos, clientes, proveedores, empleados y ventas' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Búsqueda global en productos, clientes, proveedores, empleados y ventas',
+    }),
     (0, swagger_1.ApiQuery)({ name: 'q', required: true, description: 'Término de búsqueda' }),
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, example: 8 }),
     __param(0, (0, common_1.Query)('q')),
@@ -39,6 +42,7 @@ __decorate([
 ], SearchController.prototype, "search", null);
 exports.SearchController = SearchController = __decorate([
     (0, swagger_1.ApiTags)('Búsqueda global'),
+    (0, require_module_decorator_1.RequireModule)('search'),
     (0, common_1.Controller)('search'),
     __metadata("design:paramtypes", [search_service_1.SearchService])
 ], SearchController);

@@ -1,6 +1,7 @@
 import { effect, Injectable, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
+import { PushNotificationsService } from './push-notifications.service';
 
 export interface NotifItem {
   id: number;
@@ -26,12 +27,14 @@ export class NotificationsService {
   constructor(
     private api: ApiService,
     private auth: AuthService,
+    private push: PushNotificationsService,
   ) {
     effect(() => {
       const token = this.auth.token();
       if (token) {
         this.load();
         this.connect();
+        void this.push.init();
       } else {
         this.disconnect();
       }
@@ -93,7 +96,7 @@ export class NotificationsService {
 
   private async openStream(controller: AbortController, token: string): Promise<void> {
     try {
-      const res = await fetch('/api/notifications/stream', {
+      const res = await fetch(this.api.baseUrl + '/notifications/stream', {
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });

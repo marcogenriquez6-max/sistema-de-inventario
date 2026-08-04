@@ -19,6 +19,7 @@ const accounting_service_1 = require("./accounting.service");
 const accounting_dto_1 = require("./dto/accounting.dto");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let AccountingController = class AccountingController {
     constructor(accountingService) {
@@ -104,6 +105,7 @@ __decorate([
 ], AccountingController.prototype, "trialBalance", null);
 exports.AccountingController = AccountingController = __decorate([
     (0, swagger_1.ApiTags)('Contabilidad'),
+    (0, require_module_decorator_1.RequireModule)('accounting'),
     (0, common_1.Controller)('accounting'),
     __metadata("design:paramtypes", [accounting_service_1.AccountingService])
 ], AccountingController);

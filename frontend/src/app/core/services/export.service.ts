@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { ApiService } from './api.service';
 
 export type ExportFormat = 'csv' | 'xlsx' | 'pdf';
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private api: ApiService,
+  ) {}
 
   download(
     resource: string,
@@ -19,7 +23,7 @@ export class ExportService {
         if (v !== undefined && v !== null && v !== '') p = p.set(k, String(v));
       }
     }
-    return this.http.get(`/api/export/${resource}`, {
+    return this.http.get(`${this.api.baseUrl}/export/${resource}`, {
       params: p,
       responseType: 'blob',
       observe: 'response',

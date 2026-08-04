@@ -20,6 +20,7 @@ const create_product_dto_1 = require("./dto/create-product.dto");
 const update_product_dto_1 = require("./dto/update-product.dto");
 const query_product_dto_1 = require("./dto/query-product.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let CatalogController = class CatalogController {
     constructor(catalogService) {
@@ -108,6 +109,7 @@ __decorate([
 ], CatalogController.prototype, "remove", null);
 exports.CatalogController = CatalogController = __decorate([
     (0, swagger_1.ApiTags)('Catálogo'),
+    (0, require_module_decorator_1.RequireModule)('catalog'),
     (0, common_1.Controller)('products'),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService])
 ], CatalogController);

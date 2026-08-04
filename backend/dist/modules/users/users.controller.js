@@ -20,6 +20,7 @@ const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const query_user_dto_1 = require("./dto/query-user.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let UsersController = class UsersController {
     constructor(usersService) {
@@ -88,6 +89,7 @@ __decorate([
 ], UsersController.prototype, "update", null);
 exports.UsersController = UsersController = __decorate([
     (0, swagger_1.ApiTags)('Usuarios'),
+    (0, require_module_decorator_1.RequireModule)('users'),
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], UsersController);

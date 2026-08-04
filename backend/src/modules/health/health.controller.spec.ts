@@ -19,7 +19,15 @@ describe('HealthController', () => {
         {
           provide: ModuleRegistryService,
           useValue: {
-            getModules: jest.fn().mockReturnValue([{ name: 'Test', slug: 'test', enabled: true, description: 'Test module', category: 'core' }]),
+            getModules: jest.fn().mockReturnValue([
+              {
+                name: 'Test',
+                slug: 'test',
+                enabled: true,
+                description: 'Test module',
+                category: 'core',
+              },
+            ]),
             getEnabledCount: jest.fn().mockReturnValue(1),
           },
         },

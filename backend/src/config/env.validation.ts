@@ -14,7 +14,10 @@ export const envValidationSchema = Joi.object({
   JWT_REFRESH_SECRET: Joi.string().min(16).required(),
   JWT_ACCESS_EXPIRES: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRES: Joi.string().default('7d'),
-  CORS_ORIGINS: Joi.string().default('http://localhost:4200'),
+  CORS_ORIGINS: Joi.string().default(
+    'http://localhost:4200,https://sistema-de-repuestos-864a9.web.app',
+  ),
+  FIREBASE_SERVICE_ACCOUNT: Joi.string().optional(),
   REDIS_URL: Joi.string()
     .uri({ scheme: ['redis', 'rediss'] })
     .optional(),

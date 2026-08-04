@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const purchases_service_1 = require("./purchases.service");
 const create_purchase_dto_1 = require("./dto/create-purchase.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let PurchasesController = class PurchasesController {
     constructor(purchasesService) {
@@ -68,6 +69,7 @@ __decorate([
 ], PurchasesController.prototype, "findOne", null);
 exports.PurchasesController = PurchasesController = __decorate([
     (0, swagger_1.ApiTags)('Compras'),
+    (0, require_module_decorator_1.RequireModule)('purchases'),
     (0, common_1.Controller)('purchases'),
     __metadata("design:paramtypes", [purchases_service_1.PurchasesService])
 ], PurchasesController);

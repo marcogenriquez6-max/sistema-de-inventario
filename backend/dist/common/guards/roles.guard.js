@@ -13,16 +13,20 @@ exports.RolesGuard = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const roles_decorator_1 = require("../decorators/roles.decorator");
+const require_module_decorator_1 = require("../decorators/require-module.decorator");
+const permissions_service_1 = require("../../modules/permissions/permissions.service");
 let RolesGuard = class RolesGuard {
-    constructor(reflector) {
+    constructor(reflector, permissions) {
         this.reflector = reflector;
+        this.permissions = permissions;
     }
-    canActivate(context) {
+    async canActivate(context) {
         const requiredRoles = this.reflector.getAllAndOverride(roles_decorator_1.ROLES_KEY, [
             context.getHandler(),
             context.getClass(),
         ]);
-        if (!requiredRoles || requiredRoles.length === 0) {
+        const requiredModule = this.reflector.getAllAndOverride(require_module_decorator_1.MODULE_KEY, [context.getHandler(), context.getClass()]);
+        if ((!requiredRoles || requiredRoles.length === 0) && !requiredModule) {
             return true;
         }
         const { user } = context
@@ -31,8 +35,14 @@ let RolesGuard = class RolesGuard {
         if (!user) {
             throw new common_1.ForbiddenException('Sesión no válida');
         }
-        if (!requiredRoles.includes(user.role)) {
+        if (requiredRoles?.length && !requiredRoles.includes(user.role)) {
             throw new common_1.ForbiddenException('No tienes permiso para esta operación');
+        }
+        if (requiredModule) {
+            const allowed = await this.permissions.can(user.role, requiredModule);
+            if (!allowed) {
+                throw new common_1.ForbiddenException(`No tienes acceso al módulo "${requiredModule}"`);
+            }
         }
         return true;
     }
@@ -40,6 +50,7 @@ let RolesGuard = class RolesGuard {
 exports.RolesGuard = RolesGuard;
 exports.RolesGuard = RolesGuard = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [core_1.Reflector])
+    __metadata("design:paramtypes", [core_1.Reflector,
+        permissions_service_1.PermissionsService])
 ], RolesGuard);
 //# sourceMappingURL=roles.guard.js.map

@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const documents_service_1 = require("./documents.service");
 const create_document_dto_1 = require("./dto/create-document.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let DocumentsController = class DocumentsController {
     constructor(documentsService) {
@@ -81,6 +82,7 @@ __decorate([
 ], DocumentsController.prototype, "remove", null);
 exports.DocumentsController = DocumentsController = __decorate([
     (0, swagger_1.ApiTags)('Documentos'),
+    (0, require_module_decorator_1.RequireModule)('documents'),
     (0, common_1.Controller)('documents'),
     __metadata("design:paramtypes", [documents_service_1.DocumentsService])
 ], DocumentsController);

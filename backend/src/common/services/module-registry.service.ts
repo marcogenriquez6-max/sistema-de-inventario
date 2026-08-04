@@ -160,7 +160,10 @@ export class ModuleRegistryService {
 
     return this.modules.map((module) => ({
       ...module,
-      enabled: module.slug === 'auth' || module.slug === 'users' || enabledSlugs.has(module.slug),
+      enabled:
+        module.slug === 'auth' ||
+        module.slug === 'users' ||
+        enabledSlugs.has(module.slug),
     }));
   }
 

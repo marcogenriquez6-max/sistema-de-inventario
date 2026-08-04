@@ -146,7 +146,7 @@ import { NotificationsService } from '../services/notifications.service';
       font-family: inherit;
     }
     .item:hover { background: var(--surface-hover); }
-    .item.unread { background: rgba(30, 111, 217, 0.08); }
+    .item.unread { background: var(--primary-soft); }
     .ic { font-size: 16px; }
     .body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .t { font-weight: 600; font-size: 13px; }

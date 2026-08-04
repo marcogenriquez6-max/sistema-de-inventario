@@ -4,7 +4,7 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-toast-host',
   template: `
-    <div class="toast-host">
+    <div class="toast-host" role="status" aria-live="polite">
       @for (t of toast.toasts(); track t.id) {
         <div class="toast toast-{{ t.type }}" (click)="toast.dismiss(t.id)">
           <span class="toast-icon">{{ icon(t.type) }}</span>

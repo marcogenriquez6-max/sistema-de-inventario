@@ -16,7 +16,11 @@ class CreateCustomerDto {
 }
 exports.CreateCustomerDto = CreateCustomerDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'CLI-00001' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'CLI-00001',
+        description: 'Código interno. Si no se envía, se genera automáticamente.',
+    }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(30),
     __metadata("design:type", String)

@@ -23,18 +23,52 @@ interface LowStockItem {
       <div class="page-header">
         <div>
           <h1>Inventario</h1>
-          <p class="muted small">Kardex por producto y control de existencias</p>
+          <p class="muted small">Existencias de repuestos, kardex y ajustes de stock</p>
         </div>
         <app-export-button resource="inventory" />
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="label">Productos activos</div>
+          <div class="value">{{ products().length }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">En stock crítico</div>
+          <div class="value" [class.danger]="lowStock().length > 0">{{ lowStock().length }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Unidades en inventario</div>
+          <div class="value">{{ totalUnits() }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Valorizado (costo)</div>
+          <div class="value">Bs {{ totalValue() | number: '1.2-2' }}</div>
+        </div>
       </div>
 
       <div class="card">
         <div class="section-head">
           <div>
-            <h3>Stock crítico</h3>
-            <p class="muted small">Productos por debajo del mínimo</p>
+            <h3>Existencias</h3>
+            <p class="muted small">Clic en un producto para ver su kardex</p>
+          </div>
+          <div class="toolbar">
+            <input
+              class="input search"
+              placeholder="Buscar por SKU, OEM o nombre…"
+              [(ngModel)]="q"
+              (keyup.enter)="applyFilter()"
+            />
+            <select class="select filter" [(ngModel)]="stockFilter" (change)="applyFilter()">
+              <option value="all">Todo estado</option>
+              <option value="ok">Con stock</option>
+              <option value="low">Stock bajo</option>
+              <option value="out">Agotado</option>
+            </select>
           </div>
         </div>
+
         <div class="table-wrap">
           <table class="data">
             <thead>
@@ -43,24 +77,37 @@ interface LowStockItem {
                 <th>Producto</th>
                 <th>Stock</th>
                 <th>Mínimo</th>
+                <th>Estado</th>
+                <th>Costo</th>
+                <th>PVP</th>
+                <th>Kardex</th>
               </tr>
             </thead>
             <tbody>
-              @for (p of lowStock(); track p.id) {
-                <tr>
+              @for (p of filteredProducts(); track p.id) {
+                <tr class="product-row" [class.selected]="selectedProductId() === p.id" (click)="selectProduct(p)">
                   <td class="mono">{{ p.sku }}</td>
                   <td>
                     <strong>{{ p.name }}</strong>
+                    <div class="small muted">{{ p.brand || '—' }}</div>
                   </td>
-                  <td class="qty-neg">{{ p.stock }}</td>
+                  <td class="qty" [class.qty-neg]="p.stock <= 0">{{ p.stock }}</td>
                   <td>{{ p.minStock }}</td>
+                  <td>
+                    <span [class]="'chip ' + stockClass(p)">{{ stockLabel(p) }}</span>
+                  </td>
+                  <td>Bs {{ p.costPrice | number: '1.2-2' }}</td>
+                  <td>Bs {{ p.salePrice | number: '1.2-2' }}</td>
+                  <td>
+                    <span class="link">{{ selectedProductId() === p.id ? 'Ocultar kardex' : 'Ver kardex' }}</span>
+                  </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="4">
+                  <td colspan="8">
                     <div class="empty">
-                      <div class="icon">✅</div>
-                      Ningún producto en stock crítico
+                      <div class="icon">📦</div>
+                      No hay productos que coincidan con la búsqueda.
                     </div>
                   </td>
                 </tr>
@@ -70,30 +117,15 @@ interface LowStockItem {
         </div>
       </div>
 
-      <div class="card">
-        <div class="section-head">
-          <div>
-            <h3>Kardex de producto</h3>
-            <p class="muted small">Movimientos de inventario del producto seleccionado</p>
+      @if (selectedProductId() !== null) {
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h3>Kardex de producto</h3>
+              <p class="muted small">{{ selectedProduct()?.sku }} — {{ selectedProduct()?.name }}</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" (click)="selectedProductId.set(null)">Cerrar</button>
           </div>
-          <select
-            class="select product-select"
-            [(ngModel)]="selectedProductId"
-            (change)="onProductChange()"
-          >
-            <option [ngValue]="null">Seleccione un producto…</option>
-            @for (p of products(); track p.id) {
-              <option [ngValue]="p.id">{{ p.sku }} — {{ p.name }}</option>
-            }
-          </select>
-        </div>
-
-        @if (selectedProductId() === null) {
-          <div class="empty">
-            <div class="icon">📦</div>
-            Seleccione un producto para ver su kardex
-          </div>
-        } @else {
           <div class="table-wrap">
             <table class="data">
               <thead>
@@ -112,9 +144,7 @@ interface LowStockItem {
                   <tr>
                     <td>{{ m.createdAt | date: 'short' }}</td>
                     <td>
-                      <span [class]="'chip ' + movementClass(m.movementType)">{{
-                        m.movementType
-                      }}</span>
+                      <span [class]="'chip ' + movementClass(m.movementType)">{{ m.movementType }}</span>
                     </td>
                     <td [class]="m.quantity < 0 ? 'qty-neg' : 'qty-pos'">
                       {{ m.quantity > 0 ? '+' : '' }}{{ m.quantity }}
@@ -144,7 +174,7 @@ interface LowStockItem {
                     <td colspan="7">
                       <div class="empty">
                         <div class="icon">📦</div>
-                        Sin movimientos
+                        Sin movimientos registrados
                       </div>
                     </td>
                   </tr>
@@ -152,30 +182,22 @@ interface LowStockItem {
               </tbody>
             </table>
           </div>
-
           <div class="pagination">
             <span>{{ meta().totalItems }} movimientos</span>
             <div class="pages">
               <button (click)="loadKardex(meta().page - 1)" [disabled]="meta().page <= 1">‹</button>
               <span class="muted">Página {{ meta().page }} de {{ meta().totalPages || 1 }}</span>
-              <button
-                (click)="loadKardex(meta().page + 1)"
-                [disabled]="meta().page >= meta().totalPages"
-              >
-                ›
-              </button>
+              <button (click)="loadKardex(meta().page + 1)" [disabled]="meta().page >= meta().totalPages">›</button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
 
       @if (canManage()) {
         <div class="card card-pad">
           <h3>Ajuste de stock</h3>
-          <p class="muted small">
-            Registrar entrada (positiva) o salida (negativa) manual de existencias
-          </p>
-          <form (ngSubmit)="submitAdjust()">
+          <p class="muted small">Registrar una entrada (positiva) o salida (negativa) manual de existencias</p>
+          <form (ngSubmit)="submitAdjust()" novalidate [class.submitted]="submitted()">
             <div class="form-grid">
               <div class="field">
                 <label>Producto</label>
@@ -234,19 +256,52 @@ interface LowStockItem {
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
     }
-    .product-select {
-      max-width: 340px;
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .search {
+      max-width: 300px;
+    }
+    .filter {
+      max-width: 160px;
+    }
+    .product-row {
+      cursor: pointer;
+    }
+    .product-row.selected {
+      background: var(--primary-soft);
+    }
+    .qty {
+      font-weight: 650;
     }
     .qty-neg {
       color: var(--danger);
-      font-weight: 650;
     }
     .qty-pos {
       color: var(--success);
-      font-weight: 650;
+    }
+    .link {
+      color: var(--primary);
+      font-size: 13px;
+    }
+    .value.danger {
+      color: var(--danger);
     }
     .pagination {
       border-top: 1px solid var(--border);
+    }
+    @media (max-width: 700px) {
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+      }
+      .search,
+      .filter {
+        max-width: none;
+      }
     }
   `,
 })
@@ -263,11 +318,44 @@ export class InventoryComponent {
   meta = signal({ page: 1, pageSize: 20, totalItems: 0, totalPages: 0 });
   selectedProductId = signal<number | null>(null);
   saving = signal(false);
+  submitted = signal(false);
+
+  q = '';
+  stockFilter = 'all';
 
   formProductId: number | null = null;
   movementType = 'ADJUST';
   quantity: number | null = null;
   concept = '';
+
+  readonly totalUnits = computed(() =>
+    this.products().reduce((a, p) => a + Number(p.stock) || 0, 0),
+  );
+
+  readonly totalValue = computed(() =>
+    this.products().reduce((a, p) => a + (Number(p.stock) || 0) * (Number(p.costPrice) || 0), 0),
+  );
+
+  readonly selectedProduct = computed(() =>
+    this.products().find((p) => p.id === this.selectedProductId()),
+  );
+
+  readonly filteredProducts = computed(() => {
+    const query = this.q.trim().toLowerCase();
+    return this.products()
+      .filter((p) => {
+        if (query) {
+          const hay =
+            `${p.sku} ${p.name} ${p.brand ?? ''} ${p.oemCode ?? ''} ${p.barcode ?? ''}`.toLowerCase();
+          if (!hay.includes(query)) return false;
+        }
+        if (this.stockFilter === 'ok') return p.stock > 0;
+        if (this.stockFilter === 'low') return p.stock > 0 && p.stock <= p.minStock;
+        if (this.stockFilter === 'out') return p.stock <= 0;
+        return true;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   constructor() {
     this.loadLowStock();
@@ -286,7 +374,16 @@ export class InventoryComponent {
       .subscribe((res) => this.products.set(res.items));
   }
 
-  onProductChange(): void {
+  applyFilter(): void {
+    /* señal computada; este método solo fuerza re-render del binding */
+  }
+
+  selectProduct(p: Product): void {
+    if (this.selectedProductId() === p.id) {
+      this.selectedProductId.set(null);
+      return;
+    }
+    this.selectedProductId.set(p.id);
     this.loadKardex(1);
   }
 
@@ -301,9 +398,22 @@ export class InventoryComponent {
       });
   }
 
+  stockClass(p: Product): string {
+    if (p.stock <= 0) return 'chip-danger';
+    if (p.stock <= p.minStock) return 'chip-warning';
+    return 'chip-success';
+  }
+
+  stockLabel(p: Product): string {
+    if (p.stock <= 0) return 'Agotado';
+    if (p.stock <= p.minStock) return 'Stock bajo';
+    return 'OK';
+  }
+
   async submitAdjust(): Promise<void> {
     const productId = this.formProductId;
     if (productId === null) {
+      this.submitted.set(true);
       this.toast.error('Seleccione un producto');
       return;
     }
@@ -312,6 +422,7 @@ export class InventoryComponent {
       this.quantity === undefined ||
       Number.isNaN(Number(this.quantity))
     ) {
+      this.submitted.set(true);
       this.toast.error('Indique una cantidad válida');
       return;
     }
@@ -325,11 +436,12 @@ export class InventoryComponent {
     try {
       await this.api.post('/inventory/adjustments', payload).toPromise();
       this.toast.success('Ajuste de stock registrado');
-      this.selectedProductId.set(productId);
       this.quantity = null;
       this.concept = '';
-      this.loadKardex(1);
+      this.submitted.set(false);
+      this.loadProducts();
       this.loadLowStock();
+      if (this.selectedProductId() !== null) this.loadKardex(1);
     } catch {
       /* toast del interceptor */
     } finally {

@@ -2,6 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { toPaginated } from '../../common/interfaces/paginated.interface';
 import { Type } from 'class-transformer';
@@ -23,6 +24,7 @@ class QueryAuditDto extends PaginationDto {
 }
 
 @ApiTags('Auditoría')
+@RequireModule('audit')
 @Controller('audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}

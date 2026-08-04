@@ -13,11 +13,28 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/schema-erp.sql:/docker-entrypoint-initdb.d/02-schema-erp.sql:ro
       - ./database/seed.sql:/docker-entrypoint-initdb.d/03-seed.sql:ro
+      - ./database/migrations/20260803_notifications.sql:/docker-entrypoint-initdb.d/04-notifications.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U repuestos -d repuestos_db"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: repuestos_redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
 
   api:
     build: ./backend
@@ -31,6 +48,7 @@ services:
       DATABASE_PASSWORD: repuestos_secret
       DATABASE_NAME: repuestos_db
       DATABASE_POOL_MAX: 10
+      REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-cambia_este_secret_access}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambia_este_secret_refresh}
       JWT_ACCESS_EXPIRES: 15m
@@ -54,5 +72,37 @@ services:
       - api
     restart: unless-stopped
 
+  # Backups automáticos de la base de datos (pg_dump diario, retención 7 días)
+  backup:
+    image: postgres:15-alpine
+    container_name: repuestos_backup
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: repuestos
+      PGPASSWORD: repuestos_secret
+      PGDATABASE: repuestos_db
+    volumes:
+      - backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c 'mkdir -p /backups &&
+      while true; do
+        ts=$$(date +%Y%m%d_%H%M%S);
+        echo "[backup] iniciando pg_dump $$ts";
+        if pg_dump -Fc $${PGDATABASE} > /backups/repuestos_$${ts}.dump; then
+          echo "[backup] OK repuestos_$${ts}.dump";
+        else
+          echo "[backup] ERROR en pg_dump";
+        fi;
+        find /backups -name "*.dump" -mtime +7 -delete;
+        sleep 86400;
+      done'
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  redisdata:
+  backups:

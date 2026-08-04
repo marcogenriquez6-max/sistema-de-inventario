@@ -19,6 +19,7 @@ const banking_service_1 = require("./banking.service");
 const banking_dto_1 = require("./dto/banking.dto");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let BankingController = class BankingController {
     constructor(bankingService) {
@@ -98,6 +99,7 @@ __decorate([
 ], BankingController.prototype, "movements", null);
 exports.BankingController = BankingController = __decorate([
     (0, swagger_1.ApiTags)('Bancos y Tesorería'),
+    (0, require_module_decorator_1.RequireModule)('banking'),
     (0, common_1.Controller)('banking'),
     __metadata("design:paramtypes", [banking_service_1.BankingService])
 ], BankingController);

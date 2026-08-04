@@ -19,12 +19,14 @@ import {
 } from './dto/banking.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
 } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Bancos y Tesorería')
+@RequireModule('banking')
 @Controller('banking')
 export class BankingController {
   constructor(private readonly bankingService: BankingService) {}

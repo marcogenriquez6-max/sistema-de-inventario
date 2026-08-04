@@ -8,7 +8,7 @@ describe('StatusChipComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [StatusChipComponent],
+      imports: [StatusChipComponent],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
 
@@ -17,7 +17,7 @@ describe('StatusChipComponent', () => {
   });
 
   it('should render the status label and correct chip class', () => {
-    component.value.set('LOW_STOCK');
+    fixture.componentRef.setInput('value', 'LOW_STOCK');
     fixture.detectChanges();
 
     const chip = fixture.nativeElement.querySelector('.chip');

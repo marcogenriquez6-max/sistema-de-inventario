@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { debounceTime, Subject, switchMap } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { ShortcutsService } from '../services/shortcuts.service';
+import { FocusTrapDirective } from '../directives/focus-trap.directive';
 
 export interface SearchHit {
   id: number;
@@ -42,11 +43,19 @@ interface FlatHit {
 
 @Component({
   selector: 'app-global-search',
-  imports: [],
+  imports: [FocusTrapDirective],
   template: `
     @if (open()) {
       <div class="overlay" (click)="close()">
-        <div class="panel" role="dialog" aria-modal="true" aria-label="Búsqueda global" (click)="$event.stopPropagation()">
+        <div
+          class="panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Búsqueda global"
+          focusTrap
+          (focusTrapEscape)="close()"
+          (click)="$event.stopPropagation()"
+        >
           <div class="search-row">
             <span class="lens" aria-hidden="true">🔍</span>
             <input

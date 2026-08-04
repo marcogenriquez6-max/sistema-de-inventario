@@ -170,7 +170,12 @@ export class InventoryService {
           'LOW_STOCK',
           `Stock bajo: ${product.name}`,
           `Quedan ${product.stock} unidad(es); umbral de reposición ${product.minStock}. (SKU ${product.sku})`,
-          { productId: product.id, sku: product.sku, stock: product.stock, minStock: product.minStock },
+          {
+            productId: product.id,
+            sku: product.sku,
+            stock: product.stock,
+            minStock: product.minStock,
+          },
         );
       }
     }

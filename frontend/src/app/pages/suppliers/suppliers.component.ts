@@ -120,7 +120,7 @@ function emptyForm(): SupplierForm {
       <div class="backdrop" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
           <h3>{{ editing() ? 'Editar proveedor' : 'Nuevo proveedor' }}</h3>
-          <form #f="ngForm" (ngSubmit)="save(f)">
+          <form #f="ngForm" (ngSubmit)="save(f)" novalidate [class.submitted]="submitted()">
             <div class="form-grid">
               <div class="field">
                 <label>Código *</label>
@@ -149,7 +149,7 @@ function emptyForm(): SupplierForm {
             </div>
             <div class="actions">
               <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
-              <button type="submit" class="btn btn-primary" [disabled]="saving() || !f.valid">
+              <button type="submit" class="btn btn-primary" [disabled]="saving()">
                 {{ saving() ? 'Guardando…' : 'Guardar' }}
               </button>
             </div>
@@ -215,6 +215,7 @@ export class SuppliersComponent {
   modalOpen = signal(false);
   editing = signal(false);
   saving = signal(false);
+  submitted = signal(false);
   form = signal<SupplierForm>(emptyForm());
 
   constructor() {
@@ -238,6 +239,7 @@ export class SuppliersComponent {
   openNew(): void {
     this.form.set(emptyForm());
     this.editing.set(false);
+    this.submitted.set(false);
     this.modalOpen.set(true);
   }
 
@@ -252,6 +254,7 @@ export class SuppliersComponent {
       address: s.address ?? '',
     });
     this.editing.set(true);
+    this.submitted.set(false);
     this.modalOpen.set(true);
   }
 
@@ -260,7 +263,11 @@ export class SuppliersComponent {
   }
 
   async save(f: NgForm): Promise<void> {
-    if (!f.valid) return;
+    if (!f.valid) {
+      this.submitted.set(true);
+      this.toast.error('Complete los campos obligatorios (marcados en rojo)');
+      return;
+    }
     this.saving.set(true);
     const fm = this.form();
     const payload = {

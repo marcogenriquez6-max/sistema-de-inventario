@@ -19,6 +19,7 @@ const settings_service_1 = require("./settings.service");
 const update_setting_dto_1 = require("./dto/update-setting.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const audit_service_1 = require("../audit/audit.service");
 let SettingsController = class SettingsController {
@@ -93,6 +94,7 @@ __decorate([
 ], SettingsController.prototype, "history", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, swagger_1.ApiTags)('Configuración'),
+    (0, require_module_decorator_1.RequireModule)('settings'),
     (0, common_1.Controller)('settings'),
     __metadata("design:paramtypes", [settings_service_1.SettingsService,
         audit_service_1.AuditService])

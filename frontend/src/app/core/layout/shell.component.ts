@@ -7,11 +7,13 @@ import { ToastService } from '../services/toast.service';
 import { ShortcutsService } from '../services/shortcuts.service';
 import { UserPrefsService } from '../services/user-prefs.service';
 import { TabsService } from '../services/tabs.service';
-import { navForRole } from '../navigation';
+import { navForModules, groupNav, NavSection } from '../navigation';
+import { PermissionsService } from '../services/permissions.service';
 import { BreadcrumbsComponent } from './breadcrumbs.component';
 import { DynamicTabsComponent } from './dynamic-tabs.component';
 import { GlobalSearchComponent } from './global-search.component';
 import { NotificationsBellComponent } from './notifications-bell.component';
+import { ChatWidgetComponent } from './chat-widget.component';
 
 @Component({
   selector: 'app-shell',
@@ -23,33 +25,38 @@ import { NotificationsBellComponent } from './notifications-bell.component';
     DynamicTabsComponent,
     GlobalSearchComponent,
     NotificationsBellComponent,
+    ChatWidgetComponent,
   ],
   template: `
     <div class="shell" [class.sidebar-collapsed]="collapsed()" [class.mobile-open]="mobileOpen()">
+      <a class="skip-link" (click)="skipToContent($event)">Saltar al contenido</a>
       <div class="scrim" (click)="mobileOpen.set(false)"></div>
 
       <aside class="sidebar" aria-label="Menú principal">
         <div class="brand" (click)="go('/dashboard')">
-          <span class="logo" aria-hidden="true">🔧</span>
+          <img class="logo" src="logo.jpg" alt="Repuestos ERP" />
           <span class="brand-name">Repuestos ERP</span>
         </div>
         <nav class="nav">
-          @for (item of visibleNav(); track item.path) {
-            <a
-              class="nav-item"
-              [routerLink]="item.path"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
-              (click)="mobileOpen.set(false)"
-            >
-              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-              <span class="nav-label">{{ item.label }}</span>
-            </a>
+          @for (section of navSections(); track section.label) {
+            <div class="nav-section-label">{{ section.label }}</div>
+            @for (item of section.items; track item.path) {
+              <a
+                class="nav-item"
+                [routerLink]="item.path"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+                (click)="mobileOpen.set(false)"
+              >
+                <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
           }
         </nav>
-        <div class="sidebar-footer muted small">
-          {{ user()?.fullName ?? '—' }}
-          <span class="chip chip-neutral" style="margin-top:4px">{{ role() }}</span>
+        <div class="sidebar-footer">
+          <span class="side-name">{{ user()?.fullName ?? '—' }}</span>
+          <span class="side-role">{{ role() }}</span>
         </div>
       </aside>
 
@@ -101,26 +108,44 @@ import { NotificationsBellComponent } from './notifications-bell.component';
 
         <app-dynamic-tabs />
 
-        <main class="content">
+        <main class="content" id="main" tabindex="-1">
           <router-outlet />
         </main>
       </div>
     </div>
 
     <app-global-search />
+    <app-chat-widget />
   `,
   styles: `
     .shell {
       display: flex;
       min-height: 100vh;
     }
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 12px;
+      z-index: 100;
+      background: var(--primary);
+      color: var(--primary-contrast);
+      padding: 10px 16px;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+      transition: top 0.15s ease;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
     .scrim {
       display: none;
     }
     .sidebar {
       width: var(--sidebar-width);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%);
+      border-right: 1px solid var(--sidebar-border);
+      box-shadow: 1px 0 8px rgba(15, 23, 42, 0.04);
       display: flex;
       flex-direction: column;
       position: sticky;
@@ -135,55 +160,118 @@ import { NotificationsBellComponent } from './notifications-bell.component';
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 16px;
-      font-weight: 700;
+      gap: 11px;
+      padding: 18px 16px;
+      font-weight: 750;
       font-size: 16px;
+      color: var(--sidebar-text-active);
       cursor: pointer;
       user-select: none;
+      border-bottom: 1px solid var(--sidebar-border);
     }
     .brand .logo {
-      font-size: 22px;
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 9px;
+      background: var(--surface-2);
+      border: 1px solid var(--sidebar-border);
+      padding: 4px;
+      flex: none;
+    }
+    .brand-name {
+      white-space: nowrap;
+      letter-spacing: -0.01em;
     }
     .nav {
       flex: 1;
       overflow-y: auto;
-      padding: 6px 10px;
+      padding: 8px 10px;
+    }
+    .nav-section-label {
+      padding: 14px 12px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-disabled);
+      white-space: nowrap;
     }
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 11px;
       padding: 9px 12px;
       border-radius: var(--radius-sm);
-      color: var(--text-secondary);
+      color: var(--sidebar-text);
       font-weight: 550;
       font-size: 13.5px;
       text-decoration: none;
+      margin-bottom: 2px;
+      position: relative;
       transition: background 0.14s, color 0.14s;
     }
     .nav-item:hover {
       background: var(--surface-hover);
-      color: var(--text);
+      color: var(--sidebar-text-active);
     }
     .nav-item.active {
-      background: rgba(30, 111, 217, 0.12);
+      background: var(--sidebar-active);
       color: var(--primary);
+      font-weight: 650;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--primary);
     }
     .nav-icon {
       width: 20px;
       text-align: center;
+      filter: saturate(0.6);
+    }
+    .nav-item.active .nav-icon {
+      filter: none;
     }
     .sidebar-collapsed .nav-label,
     .sidebar-collapsed .brand-name,
-    .sidebar-collapsed .sidebar-footer {
+    .sidebar-collapsed .sidebar-footer,
+    .sidebar-collapsed .nav-section-label {
       display: none;
     }
     .sidebar-footer {
       padding: 14px 16px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--sidebar-border);
       display: flex;
       flex-direction: column;
+      gap: 4px;
+    }
+    .sidebar-footer .side-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--sidebar-text-active);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar-footer .side-role {
+      align-self: flex-start;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--primary);
+      background: var(--sidebar-active);
+      border-radius: 999px;
+      padding: 2px 10px;
+    }
+    .sidebar .nav::-webkit-scrollbar-thumb {
+      background: var(--border);
     }
     .main {
       flex: 1;
@@ -196,14 +284,13 @@ import { NotificationsBellComponent } from './notifications-bell.component';
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 0 16px;
-      background: var(--surface);
+      padding: 0 20px;
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 10;
-      backdrop-filter: blur(10px);
-      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(12px);
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
     }
     .collapse-btn {
       min-width: 36px;
@@ -218,31 +305,33 @@ import { NotificationsBellComponent } from './notifications-bell.component';
       gap: 8px;
       border: 1px solid var(--border);
       background: var(--surface-2);
-      border-radius: var(--radius-sm);
-      padding: 6px 10px;
+      border-radius: 999px;
+      padding: 7px 12px;
       font-size: 13px;
       color: var(--text-secondary);
       cursor: pointer;
       font-family: inherit;
-      transition: border-color 0.14s, background 0.14s;
+      transition: border-color 0.14s, background 0.14s, box-shadow 0.14s;
     }
     .search-trigger:hover {
       border-color: var(--primary);
       background: var(--surface);
       color: var(--text);
+      box-shadow: 0 0 0 3px var(--primary-soft);
     }
     .search-trigger kbd {
       font-family: inherit;
       font-size: 11px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 1px 5px;
+      border-radius: 5px;
+      padding: 1px 6px;
       color: var(--text-disabled);
     }
     .icon-btn {
-      min-width: 36px;
+      min-width: 38px;
       justify-content: center;
+      border-radius: 999px;
     }
     .user-menu {
       position: relative;
@@ -260,10 +349,11 @@ import { NotificationsBellComponent } from './notifications-bell.component';
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.12s;
+      transition: transform 0.12s, box-shadow 0.12s;
     }
     .avatar:hover {
       transform: scale(1.05);
+      box-shadow: 0 0 0 4px var(--primary-soft);
     }
     .menu {
       position: absolute;
@@ -371,12 +461,14 @@ export class ShellComponent {
   readonly user = computed(() => this.auth.user());
   readonly role = computed(() => this.auth.role());
   private readonly prefs = inject(UserPrefsService);
+  private readonly perms = inject(PermissionsService);
   readonly collapsed = signal(this.prefs.current().sidebarCollapsed);
   readonly dark = signal(this.prefs.current().theme === 'dark');
   readonly mobileOpen = signal(false);
   readonly menuOpen = signal(false);
 
-  readonly visibleNav = computed(() => navForRole(this.role()));
+  readonly visibleNav = computed(() => navForModules(this.perms.matrix()));
+  readonly navSections = computed<NavSection[]>(() => groupNav(this.visibleNav()));
 
   readonly initials = computed(() => {
     const name = this.user()?.fullName ?? '?';
@@ -400,11 +492,17 @@ export class ShellComponent {
     this.shortcuts.toggleTheme.subscribe(() => this.toggleTheme());
     this.shortcuts.toggleSidebar.subscribe(() => this.toggleSidebar());
     document.addEventListener('click', () => this.menuOpen.set(false));
+    void this.perms.ensureLoaded();
   }
 
   go(path: string): void {
     this.menuOpen.set(false);
     this.router.navigate([path]);
+  }
+
+  skipToContent(e: MouseEvent): void {
+    e.preventDefault();
+    document.getElementById('main')?.focus();
   }
 
   toggleSidebar(): void {

@@ -1,0 +1,9 @@
+{
+  "apiKey": "TU_FIREBASE_API_KEY",
+  "authDomain": "TU_PROYECTO.firebaseapp.com",
+  "projectId": "tu-proyecto-id",
+  "storageBucket": "tu-proyecto-id.appspot.com",
+  "messagingSenderId": "TU_SENDER_ID",
+  "appId": "1:XXXX:web:YYYY",
+  "vapidKey": "CLAVE_VAPID_WEB_PUSH"
+}

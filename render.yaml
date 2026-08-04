@@ -1,0 +1,60 @@
+services:
+  # API NestJS del Sistema de Repuestos
+  - type: web
+    name: repuestos-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: repuestos-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: repuestos-db
+          property: port
+      - key: DATABASE_USER
+        fromDatabase:
+          name: repuestos-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: repuestos-db
+          property: password
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: repuestos-db
+          property: database
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: repuestos-redis
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: https://sistema-de-repuestos-864a9.web.app
+      # Claves: genera valores aleatorios (botón "Generate" en Render)
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # Opcional: habilita push FCM
+      # - key: FIREBASE_SERVICE_ACCOUNT
+      #   sync: false
+
+  # PostgreSQL gestionado
+  - type: postgres
+    name: repuestos-db
+    plan: free
+    databaseName: repuestos_db
+
+  # Redis gestionado (cache + colas BullMQ)
+  - type: redis
+    name: repuestos-redis
+    plan: free
+    maxmemoryPolicy: noeviction

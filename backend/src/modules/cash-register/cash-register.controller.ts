@@ -19,12 +19,14 @@ import {
 } from './dto/cash-register.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
 } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Caja')
+@RequireModule('cash_register')
 @Controller('cash-registers')
 export class CashRegisterController {
   constructor(private readonly cashRegisterService: CashRegisterService) {}

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from './core/guards/auth.guard';
+import { authGuard, permissionGuard } from './core/guards/auth.guard';
 import { ShellComponent } from './core/layout/shell.component';
 import { LoginComponent } from './pages/auth/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -19,6 +19,10 @@ import { DocumentsComponent } from './pages/documents/documents.component';
 import { AuditComponent } from './pages/audit/audit.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { KanbanComponent } from './pages/kanban/kanban.component';
+import { CalendarComponent } from './pages/calendar/calendar.component';
+import { PermissionsComponent } from './pages/permissions/permissions.component';
+import { ModulesComponent } from './pages/modules/modules.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -32,7 +36,7 @@ export const routes: Routes = [
       {
         path: 'pos',
         component: PosComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER', 'SELLER')],
+        canActivate: [permissionGuard('pos')],
       },
       { path: 'catalog', component: CatalogListComponent },
       { path: 'catalog/new', component: ProductFormComponent },
@@ -40,48 +44,52 @@ export const routes: Routes = [
       {
         path: 'inventory',
         component: InventoryComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER', 'INVENTORY_MANAGER')],
+        canActivate: [permissionGuard('inventory')],
       },
       {
         path: 'sales',
         component: SalesComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER', 'SELLER')],
+        canActivate: [permissionGuard('sales')],
       },
       { path: 'customers', component: CustomersComponent },
       {
         path: 'suppliers',
         component: SuppliersComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER')],
+        canActivate: [permissionGuard('suppliers')],
       },
       {
         path: 'purchases',
         component: PurchasesComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER')],
+        canActivate: [permissionGuard('purchases')],
       },
       {
         path: 'cash-register',
         component: CashRegisterComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER', 'SELLER')],
+        canActivate: [permissionGuard('cash_register')],
       },
       {
         path: 'accounting',
         component: AccountingComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER')],
+        canActivate: [permissionGuard('accounting')],
       },
       {
         path: 'banking',
         component: BankingComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER')],
+        canActivate: [permissionGuard('banking')],
       },
-      { path: 'hr', component: HrComponent, canActivate: [roleGuard('ADMIN', 'MANAGER')] },
+      { path: 'hr', component: HrComponent, canActivate: [permissionGuard('hr')] },
       { path: 'documents', component: DocumentsComponent },
-      { path: 'audit', component: AuditComponent, canActivate: [roleGuard('ADMIN', 'AUDITOR')] },
+      { path: 'kanban', component: KanbanComponent },
+      { path: 'calendar', component: CalendarComponent },
+      { path: 'audit', component: AuditComponent, canActivate: [permissionGuard('audit')] },
       {
         path: 'reports',
         component: ReportsComponent,
-        canActivate: [roleGuard('ADMIN', 'MANAGER', 'AUDITOR')],
+        canActivate: [permissionGuard('reports')],
       },
-      { path: 'settings', component: SettingsComponent, canActivate: [roleGuard('ADMIN')] },
+      { path: 'permissions', component: PermissionsComponent, canActivate: [permissionGuard('permissions')] },
+      { path: 'modules', component: ModulesComponent },
+      { path: 'settings', component: SettingsComponent, canActivate: [permissionGuard('settings')] },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

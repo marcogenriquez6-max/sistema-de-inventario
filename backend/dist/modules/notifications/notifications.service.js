@@ -18,10 +18,12 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const rxjs_1 = require("rxjs");
 const notification_entity_1 = require("./notification.entity");
+const fcm_service_1 = require("./fcm.service");
 let NotificationsService = class NotificationsService {
-    constructor(repo, dataSource) {
+    constructor(repo, dataSource, fcm) {
         this.repo = repo;
         this.dataSource = dataSource;
+        this.fcm = fcm;
         this.bus = new rxjs_1.Subject();
     }
     async create(userId, type, title, message, data) {
@@ -34,6 +36,10 @@ let NotificationsService = class NotificationsService {
         });
         const saved = await this.repo.save(n);
         this.bus.next({ userId, notification: saved });
+        void this.fcm.pushToUser(userId, title, message ?? undefined, {
+            type,
+            url: data?.url,
+        });
         return saved;
     }
     async createForRoles(roles, type, title, message, data) {
@@ -72,6 +78,7 @@ exports.NotificationsService = NotificationsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(notification_entity_1.Notification)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.DataSource])
+        typeorm_2.DataSource,
+        fcm_service_1.FcmService])
 ], NotificationsService);
 //# sourceMappingURL=notifications.service.js.map

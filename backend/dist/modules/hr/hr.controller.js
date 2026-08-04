@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const hr_service_1 = require("./hr.service");
 const employee_dto_1 = require("./dto/employee.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let HrController = class HrController {
     constructor(hrService) {
@@ -80,6 +81,7 @@ __decorate([
 ], HrController.prototype, "update", null);
 exports.HrController = HrController = __decorate([
     (0, swagger_1.ApiTags)('RR.HH.'),
+    (0, require_module_decorator_1.RequireModule)('hr'),
     (0, common_1.Controller)('employees'),
     __metadata("design:paramtypes", [hr_service_1.HrService])
 ], HrController);

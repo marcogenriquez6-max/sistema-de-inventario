@@ -12,7 +12,14 @@ export interface QueryParams {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  readonly baseUrl = '/api';
+  /**
+   * Base del API. Usa `window.__API_ORIGIN__` (definido en index.html para
+   * Firebase Hosting u otros hosts sin proxy); por defecto `/api` (dev/Netlify).
+   */
+  readonly baseUrl = ((): string => {
+    const origin = (window as { __API_ORIGIN__?: string }).__API_ORIGIN__;
+    return `${origin ? origin.replace(/\/+$/, '') : ''}/api`;
+  })();
 
   constructor(private http: HttpClient) {}
 
@@ -52,5 +59,9 @@ export class ApiService {
 
   rawPost<T>(path: string, body?: unknown): Observable<T> {
     return this.http.post<T>(this.baseUrl + path, body ?? {});
+  }
+
+  download(path: string): Observable<Blob> {
+    return this.http.get(this.baseUrl + path, { responseType: 'blob' });
   }
 }

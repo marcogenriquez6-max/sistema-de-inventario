@@ -39,6 +39,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Firebase config (claves públicas del proyecto; NO subir al repo)
+/public/firebase-config.json
+
 # System files
 .DS_Store
 Thumbs.db

@@ -2,6 +2,7 @@ import { Component, inject, signal, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { StatusChipComponent } from '../../shared/status-chip.component';
+import { ModuleCatalogComponent } from '../../shared/module-catalog.component';
 import { NgApexchartsModule, ApexOptions, ApexChart } from 'ng-apexcharts';
 
 interface DashboardSummary {
@@ -34,21 +35,9 @@ interface SalesPoint {
   count: number;
 }
 
-interface ModuleStatusSummary {
-  enabledCount: number;
-  totalCount: number;
-  modules: Array<{
-    name: string;
-    slug: string;
-    enabled: boolean;
-    description: string;
-    category: string;
-  }>;
-}
-
 @Component({
   selector: 'app-dashboard',
-  imports: [StatusChipComponent, NgApexchartsModule, CommonModule],
+  imports: [StatusChipComponent, NgApexchartsModule, CommonModule, ModuleCatalogComponent],
   template: `
     <div class="page">
       <div class="page-header">
@@ -89,32 +78,17 @@ interface ModuleStatusSummary {
         </div>
       </div>
 
-      <div class="card card-pad" style="margin-top:16px">
+      <div class="card card-pad">
         <div class="card-header">
           <div>
             <h3>Estado del ERP</h3>
             <p class="muted small">Módulos activos y cobertura operativa</p>
           </div>
-          <div class="pill">{{ moduleState()?.enabledCount ?? 0 }}/{{ moduleState()?.totalCount ?? 0 }} activos</div>
         </div>
-        @if ((moduleState()?.modules ?? []).length) {
-          <div class="module-grid">
-            @for (module of moduleState()?.modules ?? []; track module.slug) {
-              <div class="module-card">
-                <div class="module-top">
-                  <strong>{{ module.name }}</strong>
-                  <span class="chip" [class.chip-success]="module.enabled" [class.chip-neutral]="!module.enabled">
-                    {{ module.enabled ? 'Activo' : 'Desactivado' }}
-                  </span>
-                </div>
-                <p class="muted small">{{ module.description }}</p>
-              </div>
-            }
-          </div>
-        }
+        <app-module-catalog [showHeader]="false" />
       </div>
 
-      <div class="card card-pad" style="margin-top:16px">
+      <div class="card card-pad">
         <h3>Ventas de los últimos 14 días</h3>
         @if (chart.series().length) {
           <apx-chart
@@ -136,26 +110,28 @@ interface ModuleStatusSummary {
           @if ((dash()?.lowStockProducts ?? []).length === 0) {
             <p class="muted small">No hay productos bajo stock mínimo.</p>
           }
-          <table class="data">
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Producto</th>
-                <th>Stock</th>
-                <th>Mín.</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (p of dash()?.lowStockProducts ?? []; track p.id) {
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
                 <tr>
-                  <td class="mono">{{ p.sku }}</td>
-                  <td>{{ p.name }}</td>
-                  <td><app-status-chip [value]="'LOW_STOCK'" /></td>
-                  <td>{{ p.stock }} / {{ p.minStock }}</td>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Stock</th>
+                  <th>Mín.</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (p of dash()?.lowStockProducts ?? []; track p.id) {
+                  <tr>
+                    <td class="mono">{{ p.sku }}</td>
+                    <td>{{ p.name }}</td>
+                    <td><app-status-chip [value]="'LOW_STOCK'" /></td>
+                    <td>{{ p.stock }} / {{ p.minStock }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card card-pad">
@@ -163,24 +139,26 @@ interface ModuleStatusSummary {
           @if ((dash()?.recentSales ?? []).length === 0) {
             <p class="muted small">Sin ventas recientes.</p>
           }
-          <table class="data">
-            <thead>
-              <tr>
-                <th>Doc</th>
-                <th>Cliente</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (s of dash()?.recentSales ?? []; track s.id) {
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
                 <tr>
-                  <td class="mono">{{ s.docNumber }}</td>
-                  <td>{{ s.customerName }}</td>
-                  <td>Bs {{ s.total | number: '1.2-2' }}</td>
+                  <th>Doc</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (s of dash()?.recentSales ?? []; track s.id) {
+                  <tr>
+                    <td class="mono">{{ s.docNumber }}</td>
+                    <td>{{ s.customerName }}</td>
+                    <td>Bs {{ s.total | number: '1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -194,7 +172,7 @@ interface ModuleStatusSummary {
     }
     .stat-highlight {
       border-color: var(--primary);
-      box-shadow: 0 10px 30px rgba(30, 111, 217, 0.12);
+      box-shadow: var(--shadow-md);
     }
     .card-header {
       display: flex;
@@ -203,48 +181,6 @@ interface ModuleStatusSummary {
       gap: 12px;
       margin-bottom: 12px;
       flex-wrap: wrap;
-    }
-    .pill {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-    .module-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-    }
-    .module-card {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px;
-      background: var(--surface-2);
-    }
-    .module-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      padding: 3px 8px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .chip-success {
-      background: rgba(26, 143, 92, 0.14);
-      color: var(--success);
-    }
-    .chip-neutral {
-      background: rgba(90, 107, 133, 0.14);
-      color: var(--text-secondary);
     }
     @media (max-width: 980px) {
       .grid-2 {
@@ -256,7 +192,6 @@ interface ModuleStatusSummary {
 export class DashboardComponent implements AfterViewInit {
   private api = inject(ApiService);
   dash = signal<DashboardSummary | null>(null);
-  moduleState = signal<ModuleStatusSummary | null>(null);
 
   chart = {
     chart: {
@@ -267,7 +202,7 @@ export class DashboardComponent implements AfterViewInit {
     } as ApexChart,
     series: signal<{ name: string; data: number[] }[]>([]),
     xaxis: { categories: [] as string[] },
-    colors: ['#1e6fd9'],
+    colors: ['#2563eb'],
     dataLabels: { enabled: false },
     tooltip: { y: { formatter: (v: number) => `Bs ${v.toFixed(2)}` } },
   };
@@ -278,10 +213,6 @@ export class DashboardComponent implements AfterViewInit {
         this.dash.set(d);
         this.loadChart();
       },
-    });
-
-    this.api.get<ModuleStatusSummary>('/health/modules').subscribe({
-      next: (modules) => this.moduleState.set(modules),
     });
   }
 

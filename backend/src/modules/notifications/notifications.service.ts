@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { filter, map, Observable, Subject } from 'rxjs';
 import { Notification } from './notification.entity';
+import { FcmService } from './fcm.service';
 import { Role } from '../../common/decorators/roles.decorator';
 
 interface BusEvent {
@@ -18,6 +19,7 @@ export class NotificationsService {
     @InjectRepository(Notification)
     private readonly repo: Repository<Notification>,
     private readonly dataSource: DataSource,
+    private readonly fcm: FcmService,
   ) {}
 
   async create(
@@ -36,6 +38,10 @@ export class NotificationsService {
     });
     const saved = await this.repo.save(n);
     this.bus.next({ userId, notification: saved });
+    void this.fcm.pushToUser(userId, title, message ?? undefined, {
+      type,
+      url: (data as { url?: string } | null)?.url,
+    });
     return saved;
   }
 
@@ -88,7 +94,7 @@ export class NotificationsService {
   stream(userId: number): Observable<MessageEvent> {
     return this.bus.pipe(
       filter((e) => e.userId === userId),
-      map(({ notification }) => ({ data: notification } as MessageEvent)),
+      map(({ notification }) => ({ data: notification }) as MessageEvent),
     );
   }
 }

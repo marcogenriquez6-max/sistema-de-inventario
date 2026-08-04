@@ -265,7 +265,7 @@ interface AccountForm {
     }
     .acc-card.selected {
       border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(30, 111, 217, 0.25);
+      box-shadow: 0 0 0 2px var(--primary-soft);
     }
     .acc-top {
       display: flex;

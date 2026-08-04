@@ -8,13 +8,15 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { QuerySaleDto } from './dto/query-sale.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
 import {
   CurrentUser,
   AuthUser,
@@ -28,6 +30,7 @@ class VoidSaleDto {
 }
 
 @ApiTags('Ventas (POS)')
+@RequireModule('sales')
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
@@ -58,6 +61,23 @@ export class SalesController {
   @ApiOperation({ summary: 'Detalle de documento con ítems' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.salesService.findOne(id);
+  }
+
+  @Get(':id/pdf')
+  @Roles('ADMIN', 'MANAGER', 'AUDITOR', 'SELLER')
+  @ApiOperation({
+    summary: 'Generar factura / nota de venta en PDF para el cliente',
+  })
+  async pdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const buffer = await this.salesService.pdfInvoice(id);
+    const filename = `venta_${id}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.end(buffer);
   }
 
   @Post(':id/void')

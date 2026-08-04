@@ -239,7 +239,11 @@ let ExportService = class ExportService {
         const rows = await def.query(params);
         switch (format) {
             case 'csv':
-                return { buffer: this.toCsv(def.columns, rows), mime: 'text/csv; charset=utf-8', extension: 'csv' };
+                return {
+                    buffer: this.toCsv(def.columns, rows),
+                    mime: 'text/csv; charset=utf-8',
+                    extension: 'csv',
+                };
             case 'xlsx':
                 return {
                     buffer: await this.toExcel(def.columns, rows, def.title),
@@ -297,7 +301,10 @@ let ExportService = class ExportService {
         const done = new Promise((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
         doc.fontSize(16).fillColor('#17233a').text(title, { align: 'center' });
         doc.moveDown();
-        doc.fontSize(9).fillColor('#5a6b85').text(`Generado: ${new Date().toLocaleString()}`);
+        doc
+            .fontSize(9)
+            .fillColor('#5a6b85')
+            .text(`Generado: ${new Date().toLocaleString()}`);
         doc.moveDown();
         const left = 36;
         const right = 595 - 36;
@@ -313,7 +320,9 @@ let ExportService = class ExportService {
             doc.fontSize(8).fillColor('#ffffff');
             for (let i = 0; i < columns.length; i++) {
                 doc.rect(x, doc.y, finalW[i], rowH).fill('#1e6fd9');
-                doc.fillColor('#ffffff').text(columns[i].header.slice(0, 28), x + 3, doc.y + 6, {
+                doc
+                    .fillColor('#ffffff')
+                    .text(columns[i].header.slice(0, 28), x + 3, doc.y + 6, {
                     width: finalW[i] - 6,
                 });
                 x += finalW[i];

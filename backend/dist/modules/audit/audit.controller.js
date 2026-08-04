@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const audit_service_1 = require("./audit.service");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const paginated_interface_1 = require("../../common/interfaces/paginated.interface");
 const class_transformer_1 = require("class-transformer");
@@ -62,6 +63,7 @@ __decorate([
 ], AuditController.prototype, "findAll", null);
 exports.AuditController = AuditController = __decorate([
     (0, swagger_1.ApiTags)('Auditoría'),
+    (0, require_module_decorator_1.RequireModule)('audit'),
     (0, common_1.Controller)('audit'),
     __metadata("design:paramtypes", [audit_service_1.AuditService])
 ], AuditController);

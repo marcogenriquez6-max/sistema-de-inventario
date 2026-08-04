@@ -102,7 +102,7 @@ const FILE_CHIP: Record<string, string> = {
 
       @if (showModal()) {
         <div class="backdrop" (click)="close()">
-          <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal" (click)="$event.stopPropagation()" [class.submitted]="submitted()">
             <h3>Registrar documento</h3>
             <div class="field">
               <label>Nombre *</label>
@@ -202,6 +202,7 @@ export class DocumentsComponent {
   showModal = signal(false);
   form = signal({ name: '', fileType: 'PDF', category: '', notes: '' });
   saving = signal(false);
+  submitted = signal(false);
 
   constructor() {
     this.load(1);
@@ -231,6 +232,7 @@ export class DocumentsComponent {
 
   open(): void {
     this.form.set({ name: '', fileType: 'PDF', category: '', notes: '' });
+    this.submitted.set(false);
     this.showModal.set(true);
   }
 
@@ -241,7 +243,11 @@ export class DocumentsComponent {
 
   async save(): Promise<void> {
     const f = this.form();
-    if (!f.name.trim()) return;
+    if (!f.name.trim()) {
+      this.submitted.set(true);
+      this.toast.error('Complete los campos obligatorios (marcados en rojo)');
+      return;
+    }
     this.saving.set(true);
     try {
       await this.api

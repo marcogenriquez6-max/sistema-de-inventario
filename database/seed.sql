@@ -9,7 +9,9 @@
 -- El backend regenera/valida este hash; use el seeder de la aplicacion.
 INSERT INTO users (email, password_hash, full_name, role, is_active)
 VALUES
-  ('admin@sistema.com', '$argon2id$v=19$m=65536,p=4,t=3$C0HOCMm+KbN+yjjYXA9QFQ$xmfLzRC5dcU7pykCmpba8sqKma6MLeGUKjLQHsOQLiE', 'Administrador', 'ADMIN', TRUE)
+  ('admin@sistema.com', '$argon2id$v=19$m=65536,p=4,t=3$C0HOCMm+KbN+yjjYXA9QFQ$xmfLzRC5dcU7pykCmpba8sqKma6MLeGUKjLQHsOQLiE', 'Administrador', 'ADMIN', TRUE),
+  ('ventas@sistema.com', '$argon2id$v=19$m=65536,p=4,t=3$C0HOCMm+KbN+yjjYXA9QFQ$xmfLzRC5dcU7pykCmpba8sqKma6MLeGUKjLQHsOQLiE', 'Vendedor Demo', 'SELLER', TRUE),
+  ('gerente@sistema.com', '$argon2id$v=19$m=65536,p=4,t=3$C0HOCMm+KbN+yjjYXA9QFQ$xmfLzRC5dcU7pykCmpba8sqKma6MLeGUKjLQHsOQLiE', 'Gerente Demo', 'MANAGER', TRUE)
 ON CONFLICT (email) DO NOTHING;
 
 -- Parametros globales (IVA 16% segun ejemplo del PDF: 15.00 -> 17.40)
@@ -45,7 +47,8 @@ SELECT p.id, 'Toyota', 'Camry', 2018, 2023, '2.5L' FROM products p WHERE p.sku =
 
 -- Códigos alternativos
 INSERT INTO product_codes (product_id, code_type, code_value)
-SELECT p.id, 'OEM', pc.v FROM products p, unnest(ARRAY['15400-PLM-A02','04465-YZZE1','DEN-IK20']) pc(v) WHERE p.oem_code = pc.v;
+SELECT p.id, 'OEM', pc.v FROM products p, unnest(ARRAY['15400-PLM-A02','04465-YZZE1','DEN-IK20']) pc(v) WHERE p.oem_code = pc.v
+ON CONFLICT (code_type, code_value) DO NOTHING;
 
 -- ============================================================================
 -- Datos demo módulos ERP (v1.1.0)

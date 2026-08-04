@@ -19,7 +19,13 @@ let SearchService = class SearchService {
     async search(q, limit = 8) {
         const term = q.trim();
         if (!term) {
-            return { products: [], customers: [], suppliers: [], employees: [], sales: [] };
+            return {
+                products: [],
+                customers: [],
+                suppliers: [],
+                employees: [],
+                sales: [],
+            };
         }
         const like = `%${term.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
         const [products, customers, suppliers, employees, sales] = await Promise.all([

@@ -19,6 +19,7 @@ const cash_register_service_1 = require("./cash-register.service");
 const cash_register_dto_1 = require("./dto/cash-register.dto");
 const pagination_dto_1 = require("../../common/dto/pagination.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const require_module_decorator_1 = require("../../common/decorators/require-module.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let CashRegisterController = class CashRegisterController {
     constructor(cashRegisterService) {
@@ -98,6 +99,7 @@ __decorate([
 ], CashRegisterController.prototype, "close", null);
 exports.CashRegisterController = CashRegisterController = __decorate([
     (0, swagger_1.ApiTags)('Caja'),
+    (0, require_module_decorator_1.RequireModule)('cash_register'),
     (0, common_1.Controller)('cash-registers'),
     __metadata("design:paramtypes", [cash_register_service_1.CashRegisterService])
 ], CashRegisterController);
