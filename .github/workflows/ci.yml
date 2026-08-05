@@ -101,6 +101,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build backend
-        run: docker build -t repuestos-api ./backend
+        run: docker build -f backend/Dockerfile -t repuestos-api .
       - name: Build frontend
         run: docker build -t repuestos-web ./frontend
