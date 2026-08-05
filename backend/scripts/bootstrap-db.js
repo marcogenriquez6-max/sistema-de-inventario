@@ -5,7 +5,13 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const DB_DIR = path.resolve(__dirname, '..', '..', 'database');
+const CANDIDATE_DIRS = [
+  path.resolve(__dirname, '..', '..', 'database'),
+  path.resolve(__dirname, '..', 'database'),
+  path.join(process.cwd(), 'database'),
+  '/database',
+];
+const DB_DIR = CANDIDATE_DIRS.find((c) => fs.existsSync(c)) ?? CANDIDATE_DIRS[0];
 
 async function waitForDatabase(pool, attempts = 30, delayMs = 2000) {
   let attempt = 0;
