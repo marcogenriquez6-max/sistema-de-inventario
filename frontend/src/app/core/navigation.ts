@@ -28,6 +28,7 @@ export const NAV: NavItem[] = [
   { label: 'Auditoría', path: '/audit', icon: '🔎', module: 'audit', section: 'Sistema', roles: ['ADMIN', 'AUDITOR'] },
   { label: 'Reportes', path: '/reports', icon: '📈', module: 'reports', section: 'Sistema', roles: ['ADMIN', 'MANAGER', 'AUDITOR'] },
   { label: 'Roles y Permisos', path: '/permissions', icon: '🔐', module: 'permissions', section: 'Sistema', roles: ['ADMIN'] },
+  { label: 'Usuarios', path: '/users', icon: '👥', module: 'users', section: 'Sistema', roles: ['ADMIN'] },
   { label: 'Módulos del Sistema', path: '/modules', icon: '🧩', module: 'dashboard', section: 'Sistema' },
   { label: 'Configuración', path: '/settings', icon: '⚙️', module: 'settings', section: 'Sistema', roles: ['ADMIN'] },
 ];

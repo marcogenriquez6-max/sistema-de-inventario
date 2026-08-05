@@ -23,6 +23,7 @@ import { KanbanComponent } from './pages/kanban/kanban.component';
 import { CalendarComponent } from './pages/calendar/calendar.component';
 import { PermissionsComponent } from './pages/permissions/permissions.component';
 import { ModulesComponent } from './pages/modules/modules.component';
+import { UsersComponent } from './pages/users/users.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -88,6 +89,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard('reports')],
       },
       { path: 'permissions', component: PermissionsComponent, canActivate: [permissionGuard('permissions')] },
+      { path: 'users', component: UsersComponent, canActivate: [permissionGuard('users')] },
       { path: 'modules', component: ModulesComponent },
       { path: 'settings', component: SettingsComponent, canActivate: [permissionGuard('settings')] },
     ],
