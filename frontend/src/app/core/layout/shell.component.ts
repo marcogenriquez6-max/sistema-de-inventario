@@ -506,6 +506,10 @@ export class ShellComponent {
   }
 
   toggleSidebar(): void {
+    if (window.innerWidth <= 900) {
+      this.mobileOpen.set(!this.mobileOpen());
+      return;
+    }
     const next = !this.collapsed();
     this.collapsed.set(next);
     this.prefs.save({ sidebarCollapsed: next });
