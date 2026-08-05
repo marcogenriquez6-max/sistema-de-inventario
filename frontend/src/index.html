@@ -6,6 +6,11 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- config.js se genera en runtime por nginx (envsubst). Define
+         window.__API_ORIGIN__: en Render apunta a la URL publica de la API
+         para que el navegador la llame directo (evita el proxy -> 508);
+         vacio en docker-compose local => se usa /api relativo via proxy. -->
+    <script src="config.js"></script>
   </head>
   <body>
     <app-root></app-root>
