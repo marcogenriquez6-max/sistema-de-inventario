@@ -314,6 +314,7 @@ export class LoginComponent {
   loading = signal(false);
   error = signal('');
   submitted = signal(false);
+  modulesOpen = signal(false);
 
   constructor(
     private auth: AuthService,

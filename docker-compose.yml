@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: repuestos_secret
       POSTGRES_DB: repuestos_db
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -25,7 +25,7 @@ services:
     image: redis:7-alpine
     container_name: repuestos_redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     command: ["redis-server", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -53,7 +53,7 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambia_este_secret_refresh}
       JWT_ACCESS_EXPIRES: 15m
       JWT_REFRESH_EXPIRES: 7d
-      CORS_ORIGINS: http://localhost:8080
+      CORS_ORIGINS: http://localhost:8081
       THROTTLE_TTL: 60
       THROTTLE_LIMIT: 100
     ports:
@@ -67,7 +67,7 @@ services:
     build: ./frontend
     container_name: repuestos_web
     ports:
-      - "8080:80"
+      - "8081:80"
     depends_on:
       - api
     restart: unless-stopped

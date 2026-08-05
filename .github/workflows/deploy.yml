@@ -9,7 +9,7 @@ jobs:
   deploy:
     name: Desplegar con Docker Compose (producción)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && secrets.DEPLOY_HOST != '' && secrets.DEPLOY_HOST != 'pendiente'
     steps:
       - uses: actions/checkout@v4
 
