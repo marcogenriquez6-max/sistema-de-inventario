@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, Role } from '../decorators/roles.decorator';
 import { MODULE_KEY } from '../decorators/require-module.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PermissionsService } from '../../modules/permissions/permissions.service';
 
 /**
@@ -36,6 +37,14 @@ export class RolesGuard implements CanActivate {
     );
 
     if ((!requiredRoles || requiredRoles.length === 0) && !requiredModule) {
+      return true;
+    }
+
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
       return true;
     }
 
