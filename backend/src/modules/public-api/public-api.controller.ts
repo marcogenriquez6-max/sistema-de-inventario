@@ -58,7 +58,6 @@ export class PublicApiController {
           qb2
             .where('p.sku ILIKE :q')
             .orWhere('p.oemCode ILIKE :q')
-            .orWhere('p.barcode ILIKE :q')
             .orWhere('p.name ILIKE :q');
         }),
         { q: `%${query.q}%` },
@@ -79,10 +78,6 @@ export class PublicApiController {
         category: p.category,
         stock: p.stock,
         salePrice: p.salePrice,
-        warehouseAisle: p.warehouseAisle,
-        warehouseShelf: p.warehouseShelf,
-        warehouseLevel: p.warehouseLevel,
-        warehouseBin: p.warehouseBin,
       })),
       meta: {
         page,

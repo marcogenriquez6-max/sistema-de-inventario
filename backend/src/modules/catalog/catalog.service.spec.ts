@@ -46,7 +46,6 @@ describe('CatalogService', () => {
     id: 1,
     sku: 'FA-001',
     oemCode: null,
-    barcode: null,
     name: 'Filtro',
     stock: 5,
     basePrice: '15.00',
@@ -98,7 +97,7 @@ describe('CatalogService', () => {
 
     await expect(service.findByCode('FA-001')).resolves.toEqual(product);
     expect(productRepo.findOne).toHaveBeenCalledWith({
-      where: [{ sku: 'FA-001' }, { oemCode: 'FA-001' }, { barcode: 'FA-001' }],
+      where: [{ sku: 'FA-001' }, { oemCode: 'FA-001' }],
     });
   });
 

@@ -31,7 +31,7 @@ export class SearchService {
         this.dataSource.query(
           `SELECT id, sku, name, category, brand, stock, sale_price AS "salePrice", is_active AS "isActive"
            FROM products
-          WHERE (name ILIKE $1 OR sku ILIKE $1 OR oem_code ILIKE $1 OR barcode ILIKE $1)
+          WHERE (name ILIKE $1 OR sku ILIKE $1 OR oem_code ILIKE $1)
           ORDER BY name
           LIMIT ${limit}`,
           [like],

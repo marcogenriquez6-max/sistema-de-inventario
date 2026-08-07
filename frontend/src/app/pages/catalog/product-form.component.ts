@@ -39,10 +39,6 @@ import { ToastService } from '../../core/services/toast.service';
               <input class="input" [(ngModel)]="form().oemCode" name="oemCode" placeholder="Código del fabricante" />
             </div>
             <div class="field">
-              <label>Código de barras</label>
-              <input class="input" [(ngModel)]="form().barcode" name="barcode" />
-            </div>
-            <div class="field">
               <label>Nombre *</label>
               <input class="input" [(ngModel)]="form().name" name="name" placeholder="Nombre del repuesto" required />
             </div>
@@ -138,33 +134,6 @@ import { ToastService } from '../../core/services/toast.service';
           </div>
         </div>
 
-        <div class="section">
-          <div class="section-title">
-            <span class="s-icon">🗄️</span>
-            <div>
-              <h3>Ubicación en almacén</h3>
-              <p class="muted small">Para localizar el repuesto físicamente</p>
-            </div>
-          </div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Pasillo</label>
-              <input class="input" [(ngModel)]="form().warehouseAisle" name="warehouseAisle" />
-            </div>
-            <div class="field">
-              <label>Estantería</label>
-              <input class="input" [(ngModel)]="form().warehouseShelf" name="warehouseShelf" />
-            </div>
-            <div class="field">
-              <label>Nivel</label>
-              <input class="input" [(ngModel)]="form().warehouseLevel" name="warehouseLevel" />
-            </div>
-            <div class="field">
-              <label>Casilla</label>
-              <input class="input" [(ngModel)]="form().warehouseBin" name="warehouseBin" />
-            </div>
-          </div>
-        </div>
 
         <div class="form-actions">
           <a class="btn btn-ghost" routerLink="/catalog">Cancelar</a>
@@ -239,7 +208,6 @@ export class ProductFormComponent {
     id: 0,
     sku: '',
     oemCode: '',
-    barcode: '',
     name: '',
     brand: '',
     category: '',
@@ -249,10 +217,6 @@ export class ProductFormComponent {
     salePrice: 0,
     stock: 0,
     minStock: 0,
-    warehouseAisle: '',
-    warehouseShelf: '',
-    warehouseLevel: '',
-    warehouseBin: '',
   });
   isEdit = signal(false);
   saving = signal(false);
@@ -269,7 +233,6 @@ export class ProductFormComponent {
           id: p.id,
           sku: p.sku,
           oemCode: p.oemCode ?? '',
-          barcode: p.barcode ?? '',
           name: p.name,
           brand: p.brand ?? '',
           category: p.category ?? '',
@@ -279,10 +242,6 @@ export class ProductFormComponent {
           salePrice: Number(p.salePrice),
           stock: p.stock,
           minStock: p.minStock,
-          warehouseAisle: p.warehouseAisle ?? '',
-          warehouseShelf: p.warehouseShelf ?? '',
-          warehouseLevel: p.warehouseLevel ?? '',
-          warehouseBin: p.warehouseBin ?? '',
         }),
       );
     }
@@ -319,7 +278,6 @@ export class ProductFormComponent {
     const payload = {
       sku: f.sku,
       oemCode: f.oemCode || undefined,
-      barcode: f.barcode || undefined,
       name: f.name,
       brand: f.brand || undefined,
       category: f.category || undefined,
@@ -329,10 +287,6 @@ export class ProductFormComponent {
       salePrice: f.salePrice,
       stock: f.stock,
       minStock: f.minStock,
-      warehouseAisle: f.warehouseAisle || undefined,
-      warehouseShelf: f.warehouseShelf || undefined,
-      warehouseLevel: f.warehouseLevel || undefined,
-      warehouseBin: f.warehouseBin || undefined,
     };
     try {
       if (this.isEdit()) {

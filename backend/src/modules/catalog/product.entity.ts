@@ -30,10 +30,6 @@ export class Product {
   })
   oemCode: string | null;
 
-  @ApiPropertyOptional({ example: '7501234560017' })
-  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
-  barcode: string | null;
-
   @ApiProperty({ example: 'Filtro de Aceite PH-6607' })
   @Index()
   @Column({ length: 200 })
@@ -93,42 +89,6 @@ export class Product {
     default: 0,
   })
   salePrice: string;
-
-  @ApiPropertyOptional({ description: 'Pasillo' })
-  @Column({
-    type: 'varchar',
-    name: 'warehouse_aisle',
-    length: 20,
-    nullable: true,
-  })
-  warehouseAisle: string | null;
-
-  @ApiPropertyOptional({ description: 'Estantería' })
-  @Column({
-    type: 'varchar',
-    name: 'warehouse_shelf',
-    length: 20,
-    nullable: true,
-  })
-  warehouseShelf: string | null;
-
-  @ApiPropertyOptional({ description: 'Nivel' })
-  @Column({
-    type: 'varchar',
-    name: 'warehouse_level',
-    length: 20,
-    nullable: true,
-  })
-  warehouseLevel: string | null;
-
-  @ApiPropertyOptional({ description: 'Casilla' })
-  @Column({
-    type: 'varchar',
-    name: 'warehouse_bin',
-    length: 20,
-    nullable: true,
-  })
-  warehouseBin: string | null;
 
   @ApiPropertyOptional()
   @Column({ type: 'varchar', name: 'image_url', length: 300, nullable: true })

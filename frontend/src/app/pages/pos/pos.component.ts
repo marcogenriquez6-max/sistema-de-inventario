@@ -39,7 +39,7 @@ function emptyCustomer(): NewCustomerForm {
           <div class="pos-search-bar">
             <input
               class="input search"
-              placeholder="Buscar SKU, OEM, código de barras o nombre…"
+              placeholder="Buscar SKU, OEM o nombre…"
               [(ngModel)]="search"
               (keyup.enter)="doSearch()"
             />

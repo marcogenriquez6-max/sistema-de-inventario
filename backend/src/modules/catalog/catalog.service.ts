@@ -18,8 +18,8 @@ import { AuditService } from '../audit/audit.service';
 import { Request } from 'express';
 
 /**
- * Catálogo de repuestos: ficha multicódigo, compatibilidad, ubicación
- * física y cálculo de precios al alta/actualización (RF-01 a RF-06, RF-16).
+ * Catálogo de repuestos: ficha multicódigo, compatibilidad y cálculo de precios
+ * al alta/actualización (RF-01 a RF-06, RF-16).
  */
 @Injectable()
 export class CatalogService {
@@ -40,7 +40,7 @@ export class CatalogService {
   async findByCode(code: string): Promise<Product | null> {
     const normalized = code.trim().toUpperCase();
     let product = await this.productRepo.findOne({
-      where: [{ sku: code }, { oemCode: code }, { barcode: code }],
+      where: [{ sku: code }, { oemCode: code }],
     });
     if (!product) {
       const alt = await this.codeRepo.findOne({
@@ -68,7 +68,6 @@ export class CatalogService {
           qb2
             .where('p.sku ILIKE :q')
             .orWhere('p.oemCode ILIKE :q')
-            .orWhere('p.barcode ILIKE :q')
             .orWhere('p.name ILIKE :q');
         }),
         { q: `%${query.q}%` },
@@ -140,7 +139,6 @@ export class CatalogService {
     const product = this.productRepo.create({
       sku: dto.sku,
       oemCode: dto.oemCode ?? null,
-      barcode: dto.barcode ?? null,
       name: dto.name,
       category: dto.category ?? null,
       brand: dto.brand ?? null,
@@ -150,10 +148,6 @@ export class CatalogService {
       costPrice: dto.costPrice.toFixed(2),
       basePrice: basePrice.toFixed(2),
       salePrice: salePrice.toFixed(2),
-      warehouseAisle: dto.warehouseAisle ?? null,
-      warehouseShelf: dto.warehouseShelf ?? null,
-      warehouseLevel: dto.warehouseLevel ?? null,
-      warehouseBin: dto.warehouseBin ?? null,
       compat: (dto.compat ?? []).map((c) =>
         this.dataSource.manager.create(ProductCompat, {
           vehicleBrand: c.vehicleBrand,
@@ -205,28 +199,11 @@ export class CatalogService {
     Object.assign(product, {
       sku: dto.sku ?? product.sku,
       oemCode: dto.oemCode ?? product.oemCode,
-      barcode: dto.barcode ?? product.barcode,
       name: dto.name ?? product.name,
       category: dto.category !== undefined ? dto.category : product.category,
       brand: dto.brand ?? product.brand,
       unit: dto.unit ?? product.unit,
       minStock: dto.minStock ?? product.minStock,
-      warehouseAisle:
-        dto.warehouseAisle !== undefined
-          ? dto.warehouseAisle
-          : product.warehouseAisle,
-      warehouseShelf:
-        dto.warehouseShelf !== undefined
-          ? dto.warehouseShelf
-          : product.warehouseShelf,
-      warehouseLevel:
-        dto.warehouseLevel !== undefined
-          ? dto.warehouseLevel
-          : product.warehouseLevel,
-      warehouseBin:
-        dto.warehouseBin !== undefined
-          ? dto.warehouseBin
-          : product.warehouseBin,
     });
 
     if (dto.costPrice !== undefined || dto.basePrice !== undefined) {

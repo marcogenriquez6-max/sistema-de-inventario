@@ -67,7 +67,6 @@ export interface Product {
   id: number;
   sku: string;
   oemCode: string | null;
-  barcode: string | null;
   name: string;
   category: string | null;
   brand: string | null;
@@ -77,10 +76,6 @@ export interface Product {
   costPrice: string;
   basePrice: string;
   salePrice: string;
-  warehouseAisle: string | null;
-  warehouseShelf: string | null;
-  warehouseLevel: string | null;
-  warehouseBin: string | null;
   imageUrl: string | null;
   isActive: boolean;
   codes?: ProductCode[];
@@ -91,7 +86,6 @@ export interface Product {
 export interface ProductPayload {
   sku: string;
   oemCode?: string;
-  barcode?: string;
   name: string;
   category?: string;
   brand?: string;
@@ -100,10 +94,6 @@ export interface ProductPayload {
   basePrice: number;
   salePrice: number;
   minStock?: number;
-  warehouseAisle?: string;
-  warehouseShelf?: string;
-  warehouseLevel?: string;
-  warehouseBin?: string;
 }
 
 /* ---------------- Clientes / Proveedores ---------------- */

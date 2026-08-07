@@ -346,7 +346,7 @@ export class InventoryComponent {
       .filter((p) => {
         if (query) {
           const hay =
-            `${p.sku} ${p.name} ${p.brand ?? ''} ${p.oemCode ?? ''} ${p.barcode ?? ''}`.toLowerCase();
+            `${p.sku} ${p.name} ${p.brand ?? ''} ${p.oemCode ?? ''}`.toLowerCase();
           if (!hay.includes(query)) return false;
         }
         if (this.stockFilter === 'ok') return p.stock > 0;

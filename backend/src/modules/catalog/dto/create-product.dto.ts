@@ -51,12 +51,6 @@ export class CreateProductDto {
   @MaxLength(50)
   oemCode?: string;
 
-  @ApiPropertyOptional({ example: '7501234560017' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  barcode?: string;
-
   @ApiProperty({ example: 'Filtro de Aceite PH-6607' })
   @IsString()
   @MaxLength(200)
@@ -108,30 +102,6 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   minStock?: number;
-
-  @ApiPropertyOptional({ example: 'A', description: 'Pasillo' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  warehouseAisle?: string;
-
-  @ApiPropertyOptional({ example: '1', description: 'Estantería' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  warehouseShelf?: string;
-
-  @ApiPropertyOptional({ example: '2', description: 'Nivel' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  warehouseLevel?: string;
-
-  @ApiPropertyOptional({ example: '1', description: 'Casilla' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  warehouseBin?: string;
 
   @ApiPropertyOptional({ type: [CompatEntryDto] })
   @IsOptional()
