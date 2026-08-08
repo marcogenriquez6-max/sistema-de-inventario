@@ -28,6 +28,12 @@ export class QueryProductDto extends PaginationDto {
   @MaxLength(80)
   category?: string;
 
+  @ApiPropertyOptional({ description: 'Procedencia/origen (ej: Importado, Nacional)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  provenance?: string;
+
   @ApiPropertyOptional({ description: 'Marca del vehículo (compatibilidad)' })
   @IsOptional()
   @IsString()

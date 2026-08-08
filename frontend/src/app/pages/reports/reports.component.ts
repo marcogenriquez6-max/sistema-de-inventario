@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule, ApexOptions, ApexChart } from 'ng-apexcharts';
 import { ApiService } from '../../core/services/api.service';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface SalesPoint {
   day: string;
@@ -35,7 +36,7 @@ interface DashboardSummary {
 
 @Component({
   selector: 'app-reports',
-  imports: [FormsModule, NgApexchartsModule, CommonModule, ExportButtonComponent],
+  imports: [FormsModule, NgApexchartsModule, CommonModule, ExportButtonComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -64,7 +65,7 @@ interface DashboardSummary {
       <div class="stat-grid" style="margin-top:16px">
         <div class="stat">
           <div class="label">Total del período</div>
-          <div class="value">Bs {{ periodTotal() | number: '1.2-2' }}</div>
+          <div class="value">{{ periodTotal() | bs }}</div>
           <div class="sub">{{ points().length }} días analizados</div>
         </div>
         <div class="stat">
@@ -84,7 +85,7 @@ interface DashboardSummary {
         </div>
         <div class="stat">
           <div class="label">Valor del inventario</div>
-          <div class="value">Bs {{ dash()?.totalStockValue | number: '1.2-2' }}</div>
+          <div class="value">{{ dash()?.totalStockValue | bs }}</div>
           <div class="sub">{{ dash()?.totalProducts ?? 0 }} productos</div>
         </div>
       </div>
@@ -132,7 +133,7 @@ interface DashboardSummary {
                     <span [class]="p.stock <= p.minStock ? 'text-warn' : ''">{{ p.stock }}</span>
                   </td>
                   <td>{{ p.minStock }}</td>
-                  <td>Bs {{ p.salePrice | number: '1.2-2' }}</td>
+                  <td>{{ p.salePrice | bs }}</td>
                 </tr>
               } @empty {
                 <tr>

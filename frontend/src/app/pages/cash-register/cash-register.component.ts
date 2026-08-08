@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CashMovement, CashRegister, Paginated } from '../../core/models';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface MovementForm {
   type: string;
@@ -27,7 +28,7 @@ const TYPE_CHIP: Record<string, string> = {
 
 @Component({
   selector: 'app-cash-register',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -60,12 +61,12 @@ const TYPE_CHIP: Record<string, string> = {
         <div class="stat-grid">
           <div class="stat">
             <div class="label">Saldo inicial</div>
-            <div class="value">Bs {{ initial() | number: '1.2-2' }}</div>
+            <div class="value">{{ initial() | bs }}</div>
             <div class="sub">Apertura de caja</div>
           </div>
           <div class="stat">
             <div class="label">Total esperado</div>
-            <div class="value">Bs {{ expected() | number: '1.2-2' }}</div>
+            <div class="value">{{ expected() | bs }}</div>
             <div class="sub">Saldo inicial + movimientos</div>
           </div>
           <div class="stat">
@@ -139,7 +140,7 @@ const TYPE_CHIP: Record<string, string> = {
                       }}</span>
                     </td>
                     <td>
-                      <strong>Bs {{ num(m.amount) | number: '1.2-2' }}</strong>
+                      <strong>{{ num(m.amount) | bs }}</strong>
                     </td>
                     <td>{{ m.description || '—' }}</td>
                     <td>{{ m.createdAt | date: 'dd/MM/yy HH:mm' }}</td>

@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Customer, Product, SaleDocument } from '../../core/models';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface CartLine {
   product: Product;
@@ -31,7 +32,7 @@ function emptyCustomer(): NewCustomerForm {
 
 @Component({
   selector: 'app-pos',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, BsPipe],
   template: `
     <div class="pos page">
       <div class="pos-left">
@@ -82,12 +83,12 @@ function emptyCustomer(): NewCustomerForm {
               <div class="product-card">
                 <div
                   class="product-image"
-                  [style.background-image]="product.imageUrl ? 'url(' + product.imageUrl + ')' : 'url(/assets/product-placeholder.png)'"
+                  [style.background-image]="imageUrl(product.imageUrl) ? 'url(' + imageUrl(product.imageUrl) + ')' : 'url(/assets/product-placeholder.png)'"
                 ></div>
                 <div class="product-body">
                   <div class="product-title">{{ product.name }}</div>
                   <div class="product-meta">{{ product.sku }} · {{ product.brand || 'Marca' }}</div>
-                  <div class="product-price">Bs {{ product.salePrice | number: '1.2-2' }}</div>
+                  <div class="product-price">{{ product.salePrice | bs }}</div>
                   <div class="product-stock" [class.out-of-stock]="product.stock <= 0">
                     {{ product.stock > 0 ? 'Stock ' + product.stock : 'Agotado' }}
                   </div>
@@ -134,7 +135,7 @@ function emptyCustomer(): NewCustomerForm {
               <div class="line">
                 <div class="line-info">
                   <strong>{{ line.product.name }}</strong>
-                  <div class="small muted">Bs {{ line.product.salePrice }} c/u</div>
+                  <div class="small muted">{{ line.product.salePrice | bs }} c/u</div>
                 </div>
                 <div class="line-ops">
                   <button class="btn btn-ghost btn-xs" (click)="setQty(line, line.qty - 1)">−</button>
@@ -142,20 +143,20 @@ function emptyCustomer(): NewCustomerForm {
                   <button class="btn btn-ghost btn-xs" (click)="setQty(line, line.qty + 1)">+</button>
                   <button class="btn btn-ghost btn-xs" (click)="remove(line.product.id)">✕</button>
                 </div>
-                <span class="line-total">Bs {{ num(line.product.salePrice) * line.qty | number: '1.2-2' }}</span>
+                <span class="line-total">{{ num(line.product.salePrice) * line.qty | bs }}</span>
               </div>
             }
           </div>
 
           <div class="totals">
             <div class="t-row">
-              <span>Subtotal</span><span>Bs {{ subtotal() | number: '1.2-2' }}</span>
+              <span>Subtotal</span><span>{{ subtotal() | bs }}</span>
             </div>
             <div class="t-row">
-              <span>IVA ({{ taxRate }}%)</span><span>Bs {{ taxAmount() | number: '1.2-2' }}</span>
+              <span>IVA ({{ taxRate }}%)</span><span>{{ taxAmount() | bs }}</span>
             </div>
             <div class="t-row total">
-              <span>Total</span><span>Bs {{ total() | number: '1.2-2' }}</span>
+              <span>Total</span><span>{{ total() | bs }}</span>
             </div>
           </div>
 
@@ -281,7 +282,7 @@ function emptyCustomer(): NewCustomerForm {
               </div>
               <div class="field">
                 <label>Cambio (Bs)</label>
-                <div class="change-display" [class.pos]="change() >= 0">Bs {{ change() | number: '1.2-2' }}</div>
+                <div class="change-display" [class.pos]="change() >= 0">{{ change() | bs }}</div>
               </div>
             </div>
           </div>
@@ -337,8 +338,8 @@ function emptyCustomer(): NewCustomerForm {
                 <div class="r-item">
                   <span class="r-name">{{ it.productName }}</span>
                   <span>{{ it.quantity }}</span>
-                  <span>{{ it.unitSale | number: '1.2-2' }}</span>
-                  <span class="r-total">{{ it.lineTotal | number: '1.2-2' }}</span>
+                  <span>{{ it.unitSale | bs }}</span>
+                  <span class="r-total">{{ it.lineTotal | bs }}</span>
                 </div>
               }
             </div>
@@ -346,12 +347,12 @@ function emptyCustomer(): NewCustomerForm {
             <div class="receipt-rule"></div>
 
             <div class="receipt-totals">
-              <div class="r-row"><span>Subtotal</span><span>Bs {{ receipt()!.subtotal | number: '1.2-2' }}</span></div>
-              <div class="r-row"><span>IVA ({{ receipt()!.taxRate }}%)</span><span>Bs {{ receipt()!.taxAmount | number: '1.2-2' }}</span></div>
-              <div class="r-row r-total-row"><span>TOTAL</span><span>Bs {{ receipt()!.total | number: '1.2-2' }}</span></div>
+              <div class="r-row"><span>Subtotal</span><span>{{ receipt()!.subtotal | bs }}</span></div>
+              <div class="r-row"><span>IVA ({{ receipt()!.taxRate }}%)</span><span>{{ receipt()!.taxAmount | bs }}</span></div>
+              <div class="r-row r-total-row"><span>TOTAL</span><span>{{ receipt()!.total | bs }}</span></div>
               @if (received() > 0) {
-                <div class="r-row"><span>Recibido</span><span>Bs {{ received() | number: '1.2-2' }}</span></div>
-                <div class="r-row"><span>Cambio</span><span>Bs {{ change() | number: '1.2-2' }}</span></div>
+                <div class="r-row"><span>Recibido</span><span>{{ received() | bs }}</span></div>
+                <div class="r-row"><span>Cambio</span><span>{{ change() | bs }}</span></div>
               }
             </div>
 
@@ -909,6 +910,13 @@ export class PosComponent {
 
   num(v: unknown): number {
     return Number(v) || 0;
+  }
+
+  imageUrl(url: string | null): string {
+    if (!url) return '';
+    const origin = (window as { __API_ORIGIN__?: string }).__API_ORIGIN__;
+    if (origin && url.startsWith('/api/')) return `${origin}${url}`;
+    return url;
   }
 
   docText(c: Customer): string {

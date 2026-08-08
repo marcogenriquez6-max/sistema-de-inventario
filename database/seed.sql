@@ -24,13 +24,13 @@ VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- Repuestos de demostracion (ejemplo del PDF)
-INSERT INTO products (sku, oem_code, barcode, name, category, brand, unit,
+INSERT INTO products (sku, oem_code, barcode, name, category, brand, provenance, unit,
                       stock, min_stock, cost_price, base_price, sale_price,
                       warehouse_aisle, warehouse_shelf, warehouse_level, warehouse_bin)
 VALUES
-  ('FA-001', '15400-PLM-A02', '7501234560017', 'Filtro de Aceite PH-6607',  'Filtros', 'Honda',    'uds', 20, 5,  10.00, 15.00, 17.40, 'A', '1', '2', '1'),
-  ('PF-002', '04465-YZZE1',   '7501234560024', 'Pastillas de Freno Del.',   'Frenos',  'Toyota',   'uds', 12, 3,  28.00, 42.00, 48.72, 'B', '2', '1', '3'),
-  ('BU-003', 'DEN-IK20',      '7501234560031', 'Bujia Iridium Power',       'Encendido','NGK',     'uds', 50, 10,  4.50,  7.50,  8.70,  'C', '1', '3', '2')
+  ('FA-001', '15400-PLM-A02', '7501234560017', 'Filtro de Aceite PH-6607',  'Filtros', 'Honda',    'Importado', 'uds', 20, 5,  10.00, 15.00, 17.40, 'A', '1', '2', '1'),
+  ('PF-002', '04465-YZZE1',   '7501234560024', 'Pastillas de Freno Del.',   'Frenos',  'Toyota',   'Importado', 'uds', 12, 3,  28.00, 42.00, 48.72, 'B', '2', '1', '3'),
+  ('BU-003', 'DEN-IK20',      '7501234560031', 'Bujia Iridium Power',       'Encendido','NGK',     'Nacional', 'uds', 50, 10,  4.50,  7.50,  8.70,  'C', '1', '3', '2')
 ON CONFLICT (sku) DO NOTHING;
 
 -- Compatibilidad de aplicacion

@@ -31,10 +31,6 @@ import { ToastService } from '../../core/services/toast.service';
           </div>
           <div class="form-grid">
             <div class="field">
-              <label>SKU *</label>
-              <input class="input" [(ngModel)]="form().sku" name="sku" placeholder="Ej: BU-003" required />
-            </div>
-            <div class="field">
               <label>Código OEM</label>
               <input class="input" [(ngModel)]="form().oemCode" name="oemCode" placeholder="Código del fabricante" />
             </div>
@@ -47,12 +43,40 @@ import { ToastService } from '../../core/services/toast.service';
               <input class="input" [(ngModel)]="form().brand" name="brand" placeholder="Ej: NGK" />
             </div>
             <div class="field">
+              <label>Procedencia</label>
+              <input class="input" [(ngModel)]="form().provenance" name="provenance" placeholder="Ej: Importado, Nacional" />
+            </div>
+            <div class="field">
               <label>Categoría</label>
               <input class="input" [(ngModel)]="form().category" name="category" placeholder="Ej: Encendido" />
             </div>
             <div class="field">
               <label>Unidad</label>
               <input class="input" [(ngModel)]="form().unit" name="unit" placeholder="uds" />
+            </div>
+          </div>
+          <div class="field photo-field">
+            <label>Foto del producto</label>
+            <div class="photo-row">
+              <div class="photo-preview">
+                @if (form().imageUrl) {
+                  <img [src]="resolveImage(form().imageUrl)" alt="Vista previa" />
+                } @else {
+                  <span class="muted">Sin foto</span>
+                }
+              </div>
+              <div class="photo-actions">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="photoInput.click()">
+                  {{ submittingPhoto() ? 'Subiendo…' : '📷 Elegir imagen' }}
+                </button>
+                @if (form().imageUrl) {
+                  <button type="button" class="btn btn-ghost btn-sm danger" (click)="clearImage()">
+                    Quitar foto
+                  </button>
+                }
+                <input #photoInput type="file" accept="image/*" class="hidden" (change)="onPhoto($event)" />
+                <p class="muted small">JPG, PNG, WebP o GIF · máx. 3 MB</p>
+              </div>
             </div>
           </div>
         </div>
@@ -174,6 +198,43 @@ import { ToastService } from '../../core/services/toast.service';
       border-radius: 10px;
       font-size: 18px;
     }
+    .photo-field {
+      margin-top: 16px;
+    }
+    .photo-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .photo-preview {
+      width: 120px;
+      height: 120px;
+      border-radius: var(--radius);
+      border: 1px dashed var(--border);
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex: none;
+    }
+    .photo-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .photo-actions .danger {
+      color: var(--danger);
+    }
+    .hidden {
+      display: none;
+    }
     .auto-btn {
       margin-left: auto;
     }
@@ -206,20 +267,22 @@ export class ProductFormComponent {
 
   form = signal({
     id: 0,
-    sku: '',
     oemCode: '',
     name: '',
     brand: '',
     category: '',
+    provenance: '',
     unit: 'uds',
     costPrice: 0,
     basePrice: 0,
     salePrice: 0,
     stock: 0,
     minStock: 0,
+    imageUrl: '',
   });
   isEdit = signal(false);
   saving = signal(false);
+  submittingPhoto = signal(false);
   submitted = signal(false);
   taxRate = 16;
 
@@ -231,17 +294,18 @@ export class ProductFormComponent {
       this.api.get<Product>(`/products/${id}`).subscribe((p) =>
         this.form.set({
           id: p.id,
-          sku: p.sku,
           oemCode: p.oemCode ?? '',
           name: p.name,
           brand: p.brand ?? '',
           category: p.category ?? '',
+          provenance: p.provenance ?? '',
           unit: p.unit,
           costPrice: Number(p.costPrice),
           basePrice: Number(p.basePrice),
           salePrice: Number(p.salePrice),
           stock: p.stock,
           minStock: p.minStock,
+          imageUrl: p.imageUrl ?? '',
         }),
       );
     }
@@ -267,26 +331,66 @@ export class ProductFormComponent {
     this.form.set({ ...f, salePrice: sale });
   }
 
+  resolveImage(url: string): string {
+    if (!url) return '';
+    const origin = (window as { __API_ORIGIN__?: string }).__API_ORIGIN__;
+    if (origin && url.startsWith('/api/')) return `${origin}${url}`;
+    return url;
+  }
+
+  onPhoto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Selecciona un archivo de imagen');
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      this.toast.error('La imagen supera los 3 MB');
+      return;
+    }
+    this.submittingPhoto.set(true);
+    this.api.upload<{ url: string }>('/uploads', file).subscribe({
+      next: (res) => {
+        if (res?.url) {
+          this.form.set({ ...this.form(), imageUrl: res.url });
+          this.toast.success('Imagen subida');
+        }
+      },
+      error: () => this.toast.error('No se pudo subir la imagen'),
+      complete: () => {
+        this.submittingPhoto.set(false);
+        input.value = '';
+      },
+    });
+  }
+
+  clearImage(): void {
+    this.form.set({ ...this.form(), imageUrl: '' });
+  }
+
   async save(): Promise<void> {
     const f = this.form();
-    if (!f.sku.trim() || !f.name.trim()) {
+    if (!f.name.trim()) {
       this.submitted.set(true);
-      this.toast.error('Complete los campos obligatorios: SKU y nombre (marcados en rojo)');
+      this.toast.error('Complete el nombre del repuesto (marcado en rojo)');
       return;
     }
     this.saving.set(true);
     const payload = {
-      sku: f.sku,
       oemCode: f.oemCode || undefined,
       name: f.name,
       brand: f.brand || undefined,
       category: f.category || undefined,
+      provenance: f.provenance || undefined,
       unit: f.unit,
       costPrice: f.costPrice,
       basePrice: f.basePrice || undefined,
       salePrice: f.salePrice,
       stock: f.stock,
       minStock: f.minStock,
+      imageUrl: f.imageUrl || undefined,
     };
     try {
       if (this.isEdit()) {

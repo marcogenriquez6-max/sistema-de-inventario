@@ -61,6 +61,14 @@ export class ApiService {
     return this.http.post<T>(this.baseUrl + path, body ?? {});
   }
 
+  upload<T>(path: string, file: File): Observable<T> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.unwrap(
+      this.http.post<ApiEnvelope<T>>(this.baseUrl + path, form),
+    );
+  }
+
   download(path: string): Observable<Blob> {
     return this.http.get(this.baseUrl + path, { responseType: 'blob' });
   }

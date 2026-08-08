@@ -70,6 +70,7 @@ export interface Product {
   name: string;
   category: string | null;
   brand: string | null;
+  provenance: string | null;
   unit: string;
   stock: number;
   minStock: number;
@@ -84,11 +85,12 @@ export interface Product {
 }
 
 export interface ProductPayload {
-  sku: string;
+  sku?: string;
   oemCode?: string;
   name: string;
   category?: string;
   brand?: string;
+  provenance?: string;
   unit?: string;
   costPrice: number;
   basePrice: number;

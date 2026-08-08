@@ -6,6 +6,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { Employee, Paginated } from '../../core/models';
 import { StatusChipComponent } from '../../shared/status-chip.component';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface EmployeeForm {
   id: number;
@@ -35,7 +36,7 @@ const EMPTY_FORM: EmployeeForm = {
 
 @Component({
   selector: 'app-hr',
-  imports: [FormsModule, StatusChipComponent, CommonModule, ExportButtonComponent],
+  imports: [FormsModule, StatusChipComponent, CommonModule, ExportButtonComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -83,7 +84,7 @@ const EMPTY_FORM: EmployeeForm = {
                   <td>{{ e.position || '—' }}</td>
                   <td>{{ e.department || '—' }}</td>
                   <td>{{ e.phone || '—' }}</td>
-                  <td>{{ e.salary != null ? 'Bs ' + (e.salary | number: '1.2-2') : '—' }}</td>
+                  <td>{{ e.salary != null ? (e.salary | bs) : '—' }}</td>
                   <td><app-status-chip [value]="e.isActive ? 'TRUE' : 'FALSE'" /></td>
                   <td>
                     <button class="btn btn-ghost btn-sm" (click)="openEdit(e)">Editar</button>

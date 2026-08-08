@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -41,6 +42,10 @@ async function bootstrap(): Promise<void> {
 
   // Prefijo global /api.
   app.setGlobalPrefix('api');
+
+  // Archivos subidos (fotos de productos) servidos bajo /api/uploads/.
+  const uploadsDir = join(process.cwd(), 'uploads');
+  app.useStaticAssets(uploadsDir, { prefix: '/api/uploads/' });
 
   // Validación estricta de DTOs en toda la aplicación.
   app.useGlobalPipes(

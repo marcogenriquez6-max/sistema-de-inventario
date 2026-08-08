@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,9 +11,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { CatalogService } from './catalog.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -36,6 +41,59 @@ export class CatalogController {
   })
   async findByCode(@Param('code') code: string) {
     return this.catalogService.findByCode(code);
+  }
+
+  @Get('facets')
+  @ApiOperation({
+    summary: 'Valores disponibles para filtros (marcas, categorías, procedencias)',
+  })
+  async facets() {
+    return this.catalogService.getFacets();
+  }
+
+  @Get('import-template')
+  @Roles('INVENTORY_MANAGER', 'ADMIN')
+  @ApiOperation({
+    summary: 'Descargar plantilla CSV para importar productos',
+  })
+  async importTemplate(@Res() res: Response) {
+    const csv = this.catalogService.getImportTemplate();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="plantilla_productos.csv"',
+    );
+    res.end('\uFEFF' + csv);
+  }
+
+  @Post('import')
+  @Roles('INVENTORY_MANAGER', 'ADMIN')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 2 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const ok = /\.(csv|xlsx)$/i.test(file.originalname);
+        cb(ok ? null : new BadRequestException('Solo se admiten archivos CSV o XLSX'), ok);
+      },
+    }),
+  )
+  @ApiOperation({
+    summary: 'Importar productos desde CSV/XLSX (crea o actualiza por SKU)',
+  })
+  async import(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @CurrentUser() user: AuthUser,
+    @Req() req: Request,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No se recibió el archivo');
+    }
+    return this.catalogService.importProducts(
+      file.buffer,
+      file.originalname,
+      user,
+      req,
+    );
   }
 
   @Get()

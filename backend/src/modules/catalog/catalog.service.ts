@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, In, Repository } from 'typeorm';
+import { Readable } from 'stream';
+import * as ExcelJS from 'exceljs';
 import { Product } from './product.entity';
 import { ProductCode } from './product-code.entity';
 import { ProductCompat } from './product-compat.entity';
@@ -79,6 +81,11 @@ export class CatalogService {
     if (query.category) {
       qb.andWhere('p.category ILIKE :category', { category: query.category });
     }
+    if (query.provenance) {
+      qb.andWhere('p.provenance ILIKE :provenance', {
+        provenance: query.provenance,
+      });
+    }
     if (query.lowStock === 1) {
       qb.andWhere('p.stock <= p.minStock');
     }
@@ -121,6 +128,37 @@ export class CatalogService {
     return product;
   }
 
+  /** Valores disponibles para los filtros del listado (marcas, categorías, procedencias). */
+  async getFacets(): Promise<{
+    brands: string[];
+    categories: string[];
+    provenances: string[];
+  }> {
+    const rows = await this.productRepo
+      .createQueryBuilder('p')
+      .select('p.brand', 'brand')
+      .addSelect('p.category', 'category')
+      .addSelect('p.provenance', 'provenance')
+      .where('p.isActive = TRUE')
+      .orderBy('1')
+      .getRawMany();
+
+    const unique = (k: 'brand' | 'category' | 'provenance') =>
+      Array.from(
+        new Set(
+          rows
+            .map((r) => r?.[k] as string | null)
+            .filter((v): v is string => !!v && v.trim().length > 0),
+        ),
+      ).sort((a, b) => a.localeCompare(b, 'es'));
+
+    return {
+      brands: unique('brand'),
+      categories: unique('category'),
+      provenances: unique('provenance'),
+    };
+  }
+
   /**
    * Alta de repuesto. Si no se envía basePrice se calcula con el margen
    * global; salePrice siempre se calcula con el IVA vigente.
@@ -135,13 +173,15 @@ export class CatalogService {
       (await this.pricingService.computeSuggestedBasePrice(dto.costPrice));
     const salePrice = await this.pricingService.computeSalePrice(basePrice);
     const taxRate = await this.pricingService.getTaxRate();
+    const sku = dto.sku?.trim() || (await this.generateSku());
 
     const product = this.productRepo.create({
-      sku: dto.sku,
+      sku,
       oemCode: dto.oemCode ?? null,
       name: dto.name,
       category: dto.category ?? null,
       brand: dto.brand ?? null,
+      provenance: dto.provenance ?? null,
       unit: dto.unit ?? 'uds',
       stock: dto.stock ?? 0,
       minStock: dto.minStock ?? 0,
@@ -167,7 +207,7 @@ export class CatalogService {
         resourceType: 'products',
         resourceId: saved.id,
         metadata: {
-          sku: dto.sku,
+          sku,
           name: dto.name,
           basePrice,
           salePrice,
@@ -202,6 +242,8 @@ export class CatalogService {
       name: dto.name ?? product.name,
       category: dto.category !== undefined ? dto.category : product.category,
       brand: dto.brand ?? product.brand,
+      provenance:
+        dto.provenance !== undefined ? dto.provenance : product.provenance,
       unit: dto.unit ?? product.unit,
       minStock: dto.minStock ?? product.minStock,
     });
@@ -286,5 +328,227 @@ export class CatalogService {
   private isUniqueViolation(err: unknown): boolean {
     const e = err as { driverError?: { code?: string } };
     return e?.driverError?.code === '23505';
+  }
+
+  /** Genera un SKU automático (AUTO-00001, AUTO-00002, …) sin chocar con los existentes. */
+  private async generateSku(): Promise<string> {
+    const rows = await this.productRepo.query<Array<{ next: string }>>(
+      `SELECT COALESCE(MAX((substring(sku FROM '^AUTO-([0-9]+)$'))::INTEGER), 0) + 1 AS next
+         FROM products
+        WHERE sku ~ '^AUTO-[0-9]+$'`,
+    );
+    const n = Number(rows[0]?.next ?? 1);
+    return `AUTO-${String(n).padStart(5, '0')}`;
+  }
+
+  /** Encabezados de la plantilla de importación (fáciles de llenar). */
+  private static readonly IMPORT_HEADERS = [
+    'SKU',
+    'NOMBRE',
+    'OEM_CODE',
+    'BARCODE',
+    'CATEGORIA',
+    'MARCA',
+    'PROCEDENCIA',
+    'UNIDAD',
+    'STOCK',
+    'STOCK_MINIMO',
+    'COSTO',
+    'PVP_BASE',
+    'PASILLO',
+    'ESTANTE',
+    'NIVEL',
+    'CASILLA',
+  ];
+
+  private static readonly EXAMPLE_ROW = [
+    'FA-999',
+    'Filtro de Combustible',
+    '15560-RTA-003',
+    '7501234560099',
+    'Filtros',
+    'Honda',
+    'Importado',
+    'uds',
+    '10',
+    '2',
+    '12.50',
+    '18.75',
+    'A',
+    '1',
+    '2',
+    '3',
+  ];
+
+  /** CSV con encabezados + fila de ejemplo para importar productos. */
+  getImportTemplate(): string {
+    const csv = (row: string[]) => row.join(',');
+    return [csv(CatalogService.IMPORT_HEADERS), csv(CatalogService.EXAMPLE_ROW)]
+      .join('\n');
+  }
+
+  /**
+   * Importa productos desde un archivo CSV o XLSX. Crea los que no existen
+   * (por SKU) y actualiza los existentes. Devuelve un resumen de resultados.
+   */
+  async importProducts(
+    buffer: Buffer,
+    filename: string,
+    user: AuthUser,
+    req: Request,
+  ): Promise<{ created: number; updated: number; errors: Array<{ row: number; message: string }> }> {
+    const workbook = new ExcelJS.Workbook();
+    let sheet: ExcelJS.Worksheet;
+    if (filename.toLowerCase().endsWith('.xlsx')) {
+      await workbook.xlsx.read(Readable.from(buffer));
+      sheet = workbook.worksheets[0];
+    } else {
+      await workbook.csv.read(Readable.from(buffer));
+      sheet = workbook.worksheets[0];
+    }
+    if (!sheet) {
+      throw new DomainException(400, 'El archivo está vacío o no tiene hoja');
+    }
+
+    const headerRow = sheet.getRow(1);
+    const map = new Map<string, number>();
+    headerRow.eachCell((cell, col) => {
+      const header = CatalogService.normalizeHeader(String(cell.value ?? ''));
+      if (header) map.set(header, col);
+    });
+
+    const get = (row: ExcelJS.Row, key: string): string | null => {
+      const col = map.get(key);
+      if (!col) return null;
+      const v = row.getCell(col).value;
+      if (v === null || v === undefined) return null;
+      return String(v).trim();
+    };
+
+    const results = { created: 0, updated: 0, errors: [] as Array<{ row: number; message: string }> };
+    const taxRate = await this.pricingService.getTaxRate();
+
+    const rowCount = sheet.rowCount;
+    for (let r = 2; r <= rowCount; r += 1) {
+      const row = sheet.getRow(r);
+      try {
+        const sku = get(row, 'SKU');
+        const name = get(row, 'NOMBRE');
+        const costRaw = get(row, 'COSTO');
+        if (!sku || !name || !costRaw) {
+          throw new DomainException(
+            400,
+            `Faltan datos obligatorios (SKU, NOMBRE y COSTO). Fila: "${(row.getCell(1).value ?? '').toString()}"`,
+          );
+        }
+        const costPrice = Number(costRaw);
+        if (!Number.isFinite(costPrice) || costPrice < 0) {
+          throw new DomainException(400, `COSTO inválido: "${costRaw}"`);
+        }
+        const baseRaw = get(row, 'PVP_BASE');
+        const basePrice =
+          baseRaw !== null && baseRaw !== ''
+            ? Number(baseRaw)
+            : await this.pricingService.computeSuggestedBasePrice(costPrice);
+        const salePrice = await this.pricingService.computeSalePrice(
+          basePrice,
+          taxRate,
+        );
+
+        const existing = await this.productRepo.findOne({ where: { sku } });
+        const data: Partial<Product> = {
+          oemCode: get(row, 'OEM_CODE'),
+          barcode: get(row, 'BARCODE'),
+          name,
+          category: get(row, 'CATEGORIA'),
+          brand: get(row, 'MARCA'),
+          provenance: get(row, 'PROCEDENCIA'),
+          unit: get(row, 'UNIDAD') ?? 'uds',
+          costPrice: costPrice.toFixed(2),
+          basePrice: basePrice.toFixed(2),
+          salePrice: salePrice.toFixed(2),
+          warehouseAisle: get(row, 'PASILLO'),
+          warehouseShelf: get(row, 'ESTANTE'),
+          warehouseLevel: get(row, 'NIVEL'),
+          warehouseBin: get(row, 'CASILLA'),
+        };
+        const stockRaw = get(row, 'STOCK');
+        const minRaw = get(row, 'STOCK_MINIMO');
+        const stock = stockRaw !== null && stockRaw !== '' ? Number(stockRaw) : undefined;
+        const minStock = minRaw !== null && minRaw !== '' ? Number(minRaw) : undefined;
+
+        if (existing) {
+          Object.assign(existing, data);
+          if (stock !== undefined && Number.isFinite(stock)) existing.stock = Math.max(0, Math.trunc(stock));
+          if (minStock !== undefined && Number.isFinite(minStock)) existing.minStock = Math.max(0, Math.trunc(minStock));
+          await this.productRepo.save(existing);
+          results.updated += 1;
+        } else {
+          const product = this.productRepo.create({
+            ...data,
+            sku,
+            stock: stock !== undefined && Number.isFinite(stock) ? Math.max(0, Math.trunc(stock)) : 0,
+            minStock: minStock !== undefined && Number.isFinite(minStock) ? Math.max(0, Math.trunc(minStock)) : 0,
+          } as Partial<Product>);
+          await this.productRepo.save(product);
+          results.created += 1;
+        }
+      } catch (err) {
+        const message = err instanceof DomainException ? err.message : 'Error inesperado';
+        results.errors.push({ row: r, message });
+      }
+    }
+
+    await this.auditService.record({
+      userId: user.id,
+      action: 'PRODUCT:IMPORT',
+      resourceType: 'products',
+      resourceId: filename,
+      metadata: { created: results.created, updated: results.updated, errors: results.errors.length },
+      request: req,
+    });
+
+    return results;
+  }
+
+  private static normalizeHeader(value: string): string | null {
+    const clean = value
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '')
+      .trim();
+    if (!clean) return null;
+    const aliases: Record<string, string> = {
+      SKU: 'SKU',
+      CODIGO: 'SKU',
+      CODE: 'SKU',
+      NOMBRE: 'NOMBRE',
+      PRODUCTO: 'NOMBRE',
+      OEM: 'OEM_CODE',
+      OEM_CODE: 'OEM_CODE',
+      CODIGO_OEM: 'OEM_CODE',
+      BARCODE: 'BARCODE',
+      CODIGO_BARRAS: 'BARCODE',
+      CODIGODEBARRAS: 'BARCODE',
+      CATEGORIA: 'CATEGORIA',
+      MARCA: 'MARCA',
+      PROCEDENCIA: 'PROCEDENCIA',
+      ORIGEN: 'PROCEDENCIA',
+      UNIDAD: 'UNIDAD',
+      STOCK: 'STOCK',
+      CANTIDAD: 'STOCK',
+      STOCKMINIMO: 'STOCK_MINIMO',
+      STOCK_MINIMO: 'STOCK_MINIMO',
+      COSTO: 'COSTO',
+      PRECIO_COSTO: 'COSTO',
+      PVP_BASE: 'PVP_BASE',
+      PVP: 'PVP_BASE',
+      PASILLO: 'PASILLO',
+      ESTANTE: 'ESTANTE',
+      NIVEL: 'NIVEL',
+      CASILLA: 'CASILLA',
+    };
+    return aliases[clean] ?? null;
   }
 }

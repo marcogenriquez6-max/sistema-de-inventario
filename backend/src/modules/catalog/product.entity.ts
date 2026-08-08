@@ -45,6 +45,11 @@ export class Product {
   @Column({ type: 'varchar', length: 80, nullable: true })
   brand: string | null;
 
+  @ApiPropertyOptional({ example: 'Importado', description: 'Procedencia/origen' })
+  @Index()
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  provenance: string | null;
+
   @ApiPropertyOptional({ default: 'uds' })
   @Column({ length: 20, default: 'uds' })
   unit: string;

@@ -7,10 +7,11 @@ import { ToastService } from '../../core/services/toast.service';
 import { Paginated, SaleDocument } from '../../core/models';
 import { StatusChipComponent } from '../../shared/status-chip.component';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { BsPipe } from '../../shared/bs.pipe';
 
 @Component({
   selector: 'app-sales',
-  imports: [FormsModule, StatusChipComponent, CommonModule, ExportButtonComponent],
+  imports: [FormsModule, StatusChipComponent, CommonModule, ExportButtonComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -73,10 +74,10 @@ import { ExportButtonComponent } from '../../shared/export-button.component';
                   </td>
                   <td>{{ doc.customerName }}</td>
                   <td>{{ doc.createdAt | date: 'short' }}</td>
-                  <td>Bs {{ doc.subtotal | number: '1.2-2' }}</td>
-                  <td>Bs {{ doc.taxAmount | number: '1.2-2' }}</td>
+                  <td>{{ doc.subtotal | bs }}</td>
+                  <td>{{ doc.taxAmount | bs }}</td>
                   <td>
-                    <strong>Bs {{ doc.total | number: '1.2-2' }}</strong>
+                    <strong>{{ doc.total | bs }}</strong>
                   </td>
                   <td><app-status-chip [value]="doc.status" /></td>
                   <td>
@@ -107,9 +108,9 @@ import { ExportButtonComponent } from '../../shared/export-button.component';
                             <tr>
                               <td>{{ it.productName }}</td>
                               <td>{{ it.quantity }}</td>
-                              <td>Bs {{ it.unitSale | number: '1.2-2' }}</td>
+                              <td>{{ it.unitSale | bs }}</td>
                               <td>
-                                <strong>Bs {{ it.lineTotal | number: '1.2-2' }}</strong>
+                                <strong>{{ it.lineTotal | bs }}</strong>
                               </td>
                             </tr>
                           } @empty {

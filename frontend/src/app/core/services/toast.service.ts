@@ -28,6 +28,9 @@ export class ToastService {
   info(message: string): void {
     this.show('info', message);
   }
+  warning(message: string): void {
+    this.show('warning', message);
+  }
 
   dismiss(id: number): void {
     this.list.update((t) => t.filter((x) => x.id !== id));

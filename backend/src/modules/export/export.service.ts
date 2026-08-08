@@ -20,6 +20,10 @@ interface ResourceDef {
 
 export interface ExportParams {
   q?: string;
+  brand?: string;
+  category?: string;
+  provenance?: string;
+  lowStock?: number;
   from?: string;
   to?: string;
 }
@@ -36,6 +40,7 @@ export class ExportService {
         { key: 'name', header: 'Nombre', width: 36 },
         { key: 'category', header: 'Categoría', width: 16 },
         { key: 'brand', header: 'Marca', width: 14 },
+        { key: 'provenance', header: 'Procedencia', width: 12 },
         { key: 'stock', header: 'Stock', width: 10, align: 'right' },
         { key: 'minStock', header: 'Stock Mín.', width: 10, align: 'right' },
         { key: 'costPrice', header: 'Costo', width: 12, align: 'right' },
@@ -43,16 +48,28 @@ export class ExportService {
         { key: 'salePrice', header: 'P. Venta', width: 12, align: 'right' },
         { key: 'isActive', header: 'Activo', width: 8 },
       ],
-      query: ({ q }) => {
+      query: ({ q, brand, category, provenance, lowStock }) => {
         const like = q ? `%${q}%` : '%';
+        const where = [
+          `(name ILIKE $1 OR sku ILIKE $1 OR category ILIKE $1)`,
+          brand ? `brand ILIKE $2` : null,
+          category ? `category ILIKE $3` : null,
+          provenance ? `provenance ILIKE $4` : null,
+          lowStock === 1 ? `stock <= min_stock` : null,
+        ]
+          .filter(Boolean)
+          .join(' AND ');
+        const params = [like, brand, category, provenance].filter(
+          (v) => v !== undefined && v !== null,
+        );
         return this.dataSource.query(
-          `SELECT sku, name, category, brand, stock, min_stock AS "minStock",
+          `SELECT sku, name, category, brand, provenance, stock, min_stock AS "minStock",
                   cost_price AS "costPrice", base_price AS "basePrice",
                   sale_price AS "salePrice", is_active AS "isActive"
              FROM products
-            WHERE (name ILIKE $1 OR sku ILIKE $1 OR category ILIKE $1)
+            WHERE ${where}
             ORDER BY name`,
-          [like],
+          params,
         );
       },
     },

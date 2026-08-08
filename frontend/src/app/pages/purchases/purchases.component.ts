@@ -6,6 +6,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { Paginated, Product, PurchaseDocument, Supplier } from '../../core/models';
 import { StatusChipComponent } from '../../shared/status-chip.component';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface LineForm {
   productId: number | null;
@@ -19,7 +20,7 @@ function emptyLine(): LineForm {
 
 @Component({
   selector: 'app-purchases',
-  imports: [FormsModule, StatusChipComponent, CommonModule, ExportButtonComponent],
+  imports: [FormsModule, StatusChipComponent, CommonModule, ExportButtonComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -64,10 +65,10 @@ function emptyLine(): LineForm {
                   <td class="mono">{{ doc.docNumber }}</td>
                   <td>{{ doc.supplierName }}</td>
                   <td>{{ doc.invoiceNumber || '—' }}</td>
-                  <td>Bs {{ doc.subtotal | number: '1.2-2' }}</td>
-                  <td>Bs {{ doc.taxAmount | number: '1.2-2' }}</td>
+                  <td>{{ doc.subtotal | bs }}</td>
+                  <td>{{ doc.taxAmount | bs }}</td>
                   <td>
-                    <strong>Bs {{ doc.total | number: '1.2-2' }}</strong>
+                    <strong>{{ doc.total | bs }}</strong>
                   </td>
                   <td>{{ doc.createdAt | date: 'short' }}</td>
                   <td><app-status-chip [value]="doc.status" /></td>
@@ -96,9 +97,9 @@ function emptyLine(): LineForm {
                               <td class="mono">{{ it.productSku }}</td>
                               <td>{{ it.productName }}</td>
                               <td>{{ it.quantity }}</td>
-                              <td>Bs {{ it.unitCost | number: '1.2-2' }}</td>
+                              <td>{{ it.unitCost | bs }}</td>
                               <td>
-                                <strong>Bs {{ it.lineTotal | number: '1.2-2' }}</strong>
+                                <strong>{{ it.lineTotal | bs }}</strong>
                               </td>
                             </tr>
                           } @empty {
@@ -212,7 +213,7 @@ function emptyLine(): LineForm {
 
             <div class="subtotal">
               <span>Subtotal</span>
-              <strong>Bs {{ subtotal() | number: '1.2-2' }}</strong>
+              <strong>{{ subtotal() | bs }}</strong>
             </div>
 
             <div class="actions">

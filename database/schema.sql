@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS products (
     name            VARCHAR(200) NOT NULL,
     category        VARCHAR(80),
     brand           VARCHAR(80),
+    provenance      VARCHAR(80),
     unit            VARCHAR(20)  NOT NULL DEFAULT 'uds',
     stock           INTEGER      NOT NULL DEFAULT 0,
     min_stock       INTEGER      NOT NULL DEFAULT 0,
@@ -120,10 +121,11 @@ CREATE TABLE IF NOT EXISTS products (
     CONSTRAINT ck_products_prices_ge0 CHECK (cost_price >= 0 AND base_price >= 0 AND sale_price >= 0)
 );
 
-CREATE INDEX IF NOT EXISTS idx_products_name     ON products USING gin (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
-CREATE INDEX IF NOT EXISTS idx_products_brand    ON products (brand);
-CREATE INDEX IF NOT EXISTS idx_products_minstock ON products (stock, min_stock);
+CREATE INDEX IF NOT EXISTS idx_products_name      ON products USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_products_category  ON products (category);
+CREATE INDEX IF NOT EXISTS idx_products_brand     ON products (brand);
+CREATE INDEX IF NOT EXISTS idx_products_provenance ON products (provenance);
+CREATE INDEX IF NOT EXISTS idx_products_minstock  ON products (stock, min_stock);
 
 -- ----------------------------------------------------------------------------
 -- product_codes (códigos alternativos multicódigo)

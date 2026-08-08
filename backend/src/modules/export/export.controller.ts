@@ -35,6 +35,22 @@ export class ExportController {
     description: 'Formato (default: csv)',
   })
   @ApiQuery({ name: 'q', required: false, description: 'Filtro de texto' })
+  @ApiQuery({ name: 'brand', required: false, description: 'Filtro de marca' })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    description: 'Filtro de categoría',
+  })
+  @ApiQuery({
+    name: 'provenance',
+    required: false,
+    description: 'Filtro de procedencia',
+  })
+  @ApiQuery({
+    name: 'lowStock',
+    required: false,
+    description: '1 = solo stock bajo mínimo',
+  })
   @ApiQuery({
     name: 'from',
     required: false,
@@ -45,6 +61,10 @@ export class ExportController {
     @Param('resource') resource: string,
     @Query('format') format: ExportFormat | undefined,
     @Query('q') q: string | undefined,
+    @Query('brand') brand: string | undefined,
+    @Query('category') category: string | undefined,
+    @Query('provenance') provenance: string | undefined,
+    @Query('lowStock') lowStock: number | undefined,
     @Query('from') from: string | undefined,
     @Query('to') to: string | undefined,
     @Res() res: Response,
@@ -54,6 +74,10 @@ export class ExportController {
       format ?? 'csv',
       {
         q,
+        brand,
+        category,
+        provenance,
+        lowStock,
         from,
         to,
       },

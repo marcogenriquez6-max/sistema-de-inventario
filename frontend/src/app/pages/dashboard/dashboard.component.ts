@@ -4,6 +4,7 @@ import { ApiService } from '../../core/services/api.service';
 import { StatusChipComponent } from '../../shared/status-chip.component';
 import { ModuleCatalogComponent } from '../../shared/module-catalog.component';
 import { NgApexchartsModule, ApexOptions, ApexChart } from 'ng-apexcharts';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface DashboardSummary {
   todaySales: { count: number; total: number };
@@ -37,7 +38,7 @@ interface SalesPoint {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [StatusChipComponent, NgApexchartsModule, CommonModule, ModuleCatalogComponent],
+  imports: [StatusChipComponent, NgApexchartsModule, CommonModule, ModuleCatalogComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -50,17 +51,17 @@ interface SalesPoint {
       <div class="stat-grid">
         <div class="stat stat-highlight">
           <div class="label">Ventas hoy</div>
-          <div class="value">Bs {{ dash()?.todaySales?.total | number: '1.2-2' }}</div>
+          <div class="value">{{ dash()?.todaySales?.total | bs }}</div>
           <div class="sub">{{ dash()?.todaySales?.count ?? 0 }} documentos</div>
         </div>
         <div class="stat">
           <div class="label">Ventas del mes</div>
-          <div class="value">Bs {{ dash()?.monthSales?.total | number: '1.2-2' }}</div>
+          <div class="value">{{ dash()?.monthSales?.total | bs }}</div>
           <div class="sub">{{ dash()?.monthSales?.count ?? 0 }} documentos</div>
         </div>
         <div class="stat">
           <div class="label">Valor del inventario</div>
-          <div class="value">Bs {{ dash()?.totalStockValue | number: '1.2-2' }}</div>
+          <div class="value">{{ dash()?.totalStockValue | bs }}</div>
           <div class="sub">{{ dash()?.totalProducts ?? 0 }} productos activos</div>
         </div>
         <div
@@ -153,7 +154,7 @@ interface SalesPoint {
                   <tr>
                     <td class="mono">{{ s.docNumber }}</td>
                     <td>{{ s.customerName }}</td>
-                    <td>Bs {{ s.total | number: '1.2-2' }}</td>
+                    <td>{{ s.total | bs }}</td>
                   </tr>
                 }
               </tbody>

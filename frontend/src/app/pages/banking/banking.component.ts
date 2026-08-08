@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { BankAccount, BankMovement, Paginated } from '../../core/models';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface OperationForm {
   type: string;
@@ -27,7 +28,7 @@ interface AccountForm {
 
 @Component({
   selector: 'app-banking',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -47,7 +48,7 @@ interface AccountForm {
             </div>
             <div class="muted small">{{ a.bank }}</div>
             <div class="mono small muted">{{ a.accountNumber || '—' }}</div>
-            <div class="balance">Bs {{ num(a.balance) | number: '1.2-2' }}</div>
+            <div class="balance">{{ num(a.balance) | bs }}</div>
           </div>
         } @empty {
           <div class="empty">
@@ -151,7 +152,7 @@ interface AccountForm {
                       }}</span>
                     </td>
                     <td>
-                      <strong>Bs {{ num(m.amount) | number: '1.2-2' }}</strong>
+                      <strong>{{ num(m.amount) | bs }}</strong>
                     </td>
                     <td>{{ m.description || '—' }}</td>
                     <td>{{ m.createdAt | date: 'dd/MM/yy HH:mm' }}</td>

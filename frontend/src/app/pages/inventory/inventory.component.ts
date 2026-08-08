@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Paginated, Product, StockMovement } from '../../core/models';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface LowStockItem {
   id: number;
@@ -17,7 +18,7 @@ interface LowStockItem {
 
 @Component({
   selector: 'app-inventory',
-  imports: [FormsModule, CommonModule, ExportButtonComponent],
+  imports: [FormsModule, CommonModule, ExportButtonComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -43,7 +44,7 @@ interface LowStockItem {
         </div>
         <div class="stat">
           <div class="label">Valorizado (costo)</div>
-          <div class="value">Bs {{ totalValue() | number: '1.2-2' }}</div>
+          <div class="value">{{ totalValue() | bs }}</div>
         </div>
       </div>
 
@@ -96,8 +97,8 @@ interface LowStockItem {
                   <td>
                     <span [class]="'chip ' + stockClass(p)">{{ stockLabel(p) }}</span>
                   </td>
-                  <td>Bs {{ p.costPrice | number: '1.2-2' }}</td>
-                  <td>Bs {{ p.salePrice | number: '1.2-2' }}</td>
+                  <td>{{ p.costPrice | bs }}</td>
+                  <td>{{ p.salePrice | bs }}</td>
                   <td>
                     <span class="link">{{ selectedProductId() === p.id ? 'Ocultar kardex' : 'Ver kardex' }}</span>
                   </td>
@@ -149,8 +150,8 @@ interface LowStockItem {
                     <td [class]="m.quantity < 0 ? 'qty-neg' : 'qty-pos'">
                       {{ m.quantity > 0 ? '+' : '' }}{{ m.quantity }}
                     </td>
-                    <td>Bs {{ m.unitCost | number: '1.2-2' }}</td>
-                    <td>Bs {{ m.unitSale | number: '1.2-2' }}</td>
+                    <td>{{ m.unitCost | bs }}</td>
+                    <td>{{ m.unitSale | bs }}</td>
                     <td>
                       @if (m.concept) {
                         {{ m.concept }}

@@ -34,6 +34,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ChatModule } from './modules/chat/chat.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import { ModuleRegistryService } from './common/services/module-registry.service';
 
 @Module({
@@ -85,6 +86,7 @@ import { ModuleRegistryService } from './common/services/module-registry.service
     ChatModule,
     TasksModule,
     PermissionsModule,
+    UploadsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

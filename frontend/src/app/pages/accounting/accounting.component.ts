@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Account, JournalEntry, TrialBalanceRow } from '../../core/models';
+import { BsPipe } from '../../shared/bs.pipe';
 
 interface EntryLine {
   accountId: number | null;
@@ -23,7 +24,7 @@ type Tab = 'balance' | 'entries' | 'entry-new' | 'account-new';
 
 @Component({
   selector: 'app-accounting',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -65,8 +66,8 @@ type Tab = 'balance' | 'entries' | 'entry-new' | 'account-new';
                     <tr>
                       <td class="mono">{{ r.code }}</td>
                       <td>{{ r.name }}</td>
-                      <td class="num">Bs {{ r.debit | number: '1.2-2' }}</td>
-                      <td class="num">Bs {{ r.credit | number: '1.2-2' }}</td>
+                      <td class="num">{{ r.debit | bs }}</td>
+                      <td class="num">{{ r.credit | bs }}</td>
                     </tr>
                   } @empty {
                     <tr>
@@ -83,8 +84,8 @@ type Tab = 'balance' | 'entries' | 'entry-new' | 'account-new';
                   <tfoot>
                     <tr>
                       <td colspan="2">Totales</td>
-                      <td class="num">Bs {{ totalDebits() | number: '1.2-2' }}</td>
-                      <td class="num">Bs {{ totalCredits() | number: '1.2-2' }}</td>
+                      <td class="num">{{ totalDebits() | bs }}</td>
+                      <td class="num">{{ totalCredits() | bs }}</td>
                     </tr>
                   </tfoot>
                 }
@@ -109,10 +110,10 @@ type Tab = 'balance' | 'entries' | 'entry-new' | 'account-new';
                     </div>
                     <div class="entry-totals">
                       <span class="small"
-                        >Debe <strong>Bs {{ entryDebits(e) | number: '1.2-2' }}</strong></span
+                        >Debe <strong>{{ entryDebits(e) | bs }}</strong></span
                       >
                       <span class="small"
-                        >Haber <strong>Bs {{ entryCredits(e) | number: '1.2-2' }}</strong></span
+                        >Haber <strong>{{ entryCredits(e) | bs }}</strong></span
                       >
                       <button class="btn btn-ghost btn-sm" (click)="toggleEntry(e.id)">
                         {{ isExpanded(e.id) ? 'Ocultar' : 'Detalle' }}
@@ -133,8 +134,8 @@ type Tab = 'balance' | 'entries' | 'entry-new' | 'account-new';
                           @for (l of entryDetail(e.id)?.lines ?? []; track l.id) {
                             <tr>
                               <td>{{ l.account?.name ?? 'Cuenta #' + l.accountId }}</td>
-                              <td class="num">Bs {{ num(l.debit) | number: '1.2-2' }}</td>
-                              <td class="num">Bs {{ num(l.credit) | number: '1.2-2' }}</td>
+                              <td class="num">{{ num(l.debit) | bs }}</td>
+                              <td class="num">{{ num(l.credit) | bs }}</td>
                             </tr>
                           }
                         </tbody>
@@ -235,10 +236,10 @@ type Tab = 'balance' | 'entries' | 'entry-new' | 'account-new';
 
             <div class="balance-row">
               <span
-                >Débitos: <strong>Bs {{ sumDebits() | number: '1.2-2' }}</strong></span
+                >Débitos: <strong>{{ sumDebits() | bs }}</strong></span
               >
               <span
-                >Créditos: <strong>Bs {{ sumCredits() | number: '1.2-2' }}</strong></span
+                >Créditos: <strong>{{ sumCredits() | bs }}</strong></span
               >
               @if (!balanced()) {
                 <span class="warn">Debe y Haber no cuadran</span>

@@ -17,6 +17,7 @@ COPY backend/assets ./assets
 COPY backend/package.json ./
 COPY backend/scripts ./scripts
 COPY database ./database
+RUN mkdir -p /app/uploads && chown node:node /app/uploads
 EXPOSE 3000
 USER node
 # Bootstrap de BD idempotente y luego la API

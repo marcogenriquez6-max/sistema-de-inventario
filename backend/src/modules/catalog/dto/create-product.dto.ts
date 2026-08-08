@@ -40,10 +40,14 @@ class CompatEntryDto {
 }
 
 export class CreateProductDto {
-  @ApiProperty({ example: 'FA-001' })
+  @ApiPropertyOptional({
+    example: 'FA-001',
+    description: 'Código interno. Si se omite, se genera automáticamente.',
+  })
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  sku: string;
+  sku?: string;
 
   @ApiPropertyOptional({ example: '15400-PLM-A02' })
   @IsOptional()
@@ -67,6 +71,12 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(80)
   brand?: string;
+
+  @ApiPropertyOptional({ example: 'Importado', description: 'Procedencia/origen' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  provenance?: string;
 
   @ApiPropertyOptional({ default: 'uds' })
   @IsOptional()

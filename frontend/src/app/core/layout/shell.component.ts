@@ -57,6 +57,10 @@ import { ChatWidgetComponent } from './chat-widget.component';
         <div class="sidebar-footer">
           <span class="side-name">{{ user()?.fullName ?? '—' }}</span>
           <span class="side-role">{{ role() }}</span>
+          <button class="side-logout" (click)="signOut()">
+            <span aria-hidden="true">🚪</span>
+            <span>Cerrar sesión</span>
+          </button>
         </div>
       </aside>
 
@@ -269,6 +273,30 @@ import { ChatWidgetComponent } from './chat-widget.component';
       background: var(--sidebar-active);
       border-radius: 999px;
       padding: 2px 10px;
+    }
+    .sidebar-footer .side-logout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      border: none;
+      background: transparent;
+      color: var(--sidebar-text);
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      text-align: left;
+      transition: background 0.14s, color 0.14s;
+    }
+    .sidebar-footer .side-logout:hover {
+      background: var(--surface-hover);
+      color: var(--danger);
+    }
+    .sidebar-collapsed .side-logout {
+      display: none;
     }
     .sidebar .nav::-webkit-scrollbar-thumb {
       background: var(--border);
