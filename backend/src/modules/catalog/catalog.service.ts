@@ -458,7 +458,6 @@ export class CatalogService {
         const existing = await this.productRepo.findOne({ where: { sku } });
         const data: Partial<Product> = {
           oemCode: get(row, 'OEM_CODE'),
-          barcode: get(row, 'BARCODE'),
           name,
           category: get(row, 'CATEGORIA'),
           brand: get(row, 'MARCA'),
@@ -467,10 +466,6 @@ export class CatalogService {
           costPrice: costPrice.toFixed(2),
           basePrice: basePrice.toFixed(2),
           salePrice: salePrice.toFixed(2),
-          warehouseAisle: get(row, 'PASILLO'),
-          warehouseShelf: get(row, 'ESTANTE'),
-          warehouseLevel: get(row, 'NIVEL'),
-          warehouseBin: get(row, 'CASILLA'),
         };
         const stockRaw = get(row, 'STOCK');
         const minRaw = get(row, 'STOCK_MINIMO');
