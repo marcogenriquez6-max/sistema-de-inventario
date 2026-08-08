@@ -3,16 +3,18 @@ import { Component, signal } from '@angular/core';
 @Component({
   selector: 'app-confirm-dialog',
   template: `
-    <div class="backdrop" (click)="close(false)">
-      <div class="modal" (click)="$event.stopPropagation()">
-        <h3>{{ title() }}</h3>
-        <p class="muted">{{ message() }}</p>
-        <div class="actions">
-          <button class="btn" (click)="close(false)">Cancelar</button>
-          <button class="btn btn-danger" (click)="close(true)">{{ confirmLabel() }}</button>
+    @if (visible()) {
+      <div class="backdrop" (click)="close(false)">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <h3>{{ title() }}</h3>
+          <p class="muted">{{ message() }}</p>
+          <div class="actions">
+            <button class="btn" (click)="close(false)">Cancelar</button>
+            <button class="btn btn-danger" (click)="close(true)">{{ confirmLabel() }}</button>
+          </div>
         </div>
       </div>
-    </div>
+    }
   `,
   styles: `
     .backdrop {
@@ -44,16 +46,20 @@ export class ConfirmDialogComponent {
   readonly title = signal('¿Confirmar acción?');
   readonly message = signal('');
   readonly confirmLabel = signal('Confirmar');
+  readonly visible = signal(false);
   private resolver?: (ok: boolean) => void;
 
   open(title: string, message: string, confirmLabel = 'Confirmar'): Promise<boolean> {
     this.title.set(title);
     this.message.set(message);
     this.confirmLabel.set(confirmLabel);
+    this.visible.set(true);
     return new Promise((resolve) => (this.resolver = resolve));
   }
 
   close(ok: boolean): void {
+    this.visible.set(false);
     this.resolver?.(ok);
+    this.resolver = undefined;
   }
 }

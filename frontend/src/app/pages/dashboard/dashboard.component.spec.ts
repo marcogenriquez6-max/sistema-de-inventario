@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { ApiService } from '../../core/services/api.service';
+import { ModuleCatalogComponent } from '../../shared/module-catalog.component';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
@@ -60,7 +62,8 @@ describe('DashboardComponent', () => {
         todaySales: expect.objectContaining({ total: 450.5 }),
       }),
     );
-    expect(component.moduleState()?.enabledCount).toBe(5);
+    const catalog = fixture.debugElement.query(By.directive(ModuleCatalogComponent));
+    expect(catalog.componentInstance.state()?.enabledCount).toBe(5);
     expect(component.chart.series()[0].data).toEqual([1200]);
     expect((mockApi.get as any).mock.calls.length).toBe(3);
   });

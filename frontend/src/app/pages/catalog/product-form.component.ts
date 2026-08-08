@@ -1,13 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { Product } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
 @Component({
   selector: 'app-product-form',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, ConfirmDialogComponent],
   template: `
     <div class="page">
       <div class="page-header">
@@ -166,6 +167,7 @@ import { ToastService } from '../../core/services/toast.service';
           </button>
         </div>
       </form>
+      <app-confirm-dialog #confirm />
     </div>
   `,
   styles: `
@@ -264,6 +266,7 @@ export class ProductFormComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private confirm = viewChild(ConfirmDialogComponent);
 
   form = signal({
     id: 0,
@@ -377,6 +380,12 @@ export class ProductFormComponent {
       this.toast.error('Complete el nombre del repuesto (marcado en rojo)');
       return;
     }
+    const ok = await this.confirm()?.open(
+      this.isEdit() ? '¿Guardar cambios?' : '¿Crear producto?',
+      'Se guardarán los datos del repuesto. ¿Desea continuar?',
+      this.isEdit() ? 'Guardar' : 'Crear',
+    );
+    if (!ok) return;
     this.saving.set(true);
     const payload = {
       oemCode: f.oemCode || undefined,
