@@ -13,7 +13,7 @@ export type CodeType = 'OEM' | 'BARCODE' | 'SKU_ALT';
 /**
  * Códigos alternativos del repuesto (multicódigo). Permite buscar por
  * OEM, código de barras o SKU alternativo sin romper la unicidad de
- * products.sku/oem_code/barcode.
+ * products.sku/oem_code.
  */
 @Entity('product_codes')
 export class ProductCode {

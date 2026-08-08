@@ -239,7 +239,7 @@ export class UsersComponent {
 
   load(page: number): void {
     this.api
-      .get<Paginated<User>>('/users', { page, pageSize: 20, q: this.q || undefined })
+      .get<Paginated<User>>('/users', { page, pageSize: 20, search: this.q || undefined })
       .subscribe((res) => {
         this.items.set(res.items);
         this.meta.set(res.meta);

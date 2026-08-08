@@ -253,7 +253,7 @@ export class SalesComponent {
       return;
     }
     try {
-      await this.api.post(`/sales/${doc.id}/void`).toPromise();
+      await this.api.post(`/sales/${doc.id}/void`, { reason: 'Anulación manual' }).toPromise();
       this.toast.success(`Venta ${doc.docNumber} anulada`);
       this.load(this.meta().page);
     } catch {

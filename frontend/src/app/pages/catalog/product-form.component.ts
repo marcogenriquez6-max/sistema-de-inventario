@@ -399,7 +399,7 @@ export class ProductFormComponent {
       salePrice: f.salePrice,
       stock: f.stock,
       minStock: f.minStock,
-      imageUrl: f.imageUrl || undefined,
+      imageUrl: f.imageUrl || null,
     };
     try {
       if (this.isEdit()) {

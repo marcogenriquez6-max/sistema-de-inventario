@@ -166,6 +166,60 @@ describe('CatalogService', () => {
     ).rejects.toThrow(DomainException);
   });
 
+  it('create respeta salePrice e imageUrl enviados por el frontend', async () => {
+    productRepo.save.mockImplementation((d) =>
+      Promise.resolve({ id: 8, ...d }),
+    );
+
+    const saved = await service.create(
+      {
+        sku: 'FOTO-1',
+        name: 'Con foto',
+        costPrice: 10,
+        basePrice: 18,
+        salePrice: 22,
+        imageUrl: '/api/uploads/foto.jpg',
+      },
+      actor,
+      req,
+    );
+
+    expect(saved.salePrice).toBe('22.00');
+    expect(saved.imageUrl).toBe('/api/uploads/foto.jpg');
+  });
+
+  it('update guarda imageUrl enviada y respeta salePrice explícito', async () => {
+    productRepo.findOne.mockResolvedValue({ ...product, imageUrl: null });
+    productRepo.save.mockImplementation((d) => Promise.resolve(d));
+
+    const result = await service.update(
+      1,
+      { salePrice: 25, imageUrl: '/api/uploads/nueva.jpg' },
+      actor,
+      req,
+    );
+
+    expect(result.salePrice).toBe('25.00');
+    expect(result.imageUrl).toBe('/api/uploads/nueva.jpg');
+  });
+
+  it('update permite limpiar la foto enviando imageUrl null', async () => {
+    productRepo.findOne.mockResolvedValue({
+      ...product,
+      imageUrl: '/api/uploads/old.jpg',
+    });
+    productRepo.save.mockImplementation((d) => Promise.resolve(d));
+
+    const result = await service.update(
+      1,
+      { imageUrl: null as never },
+      actor,
+      req,
+    );
+
+    expect(result.imageUrl).toBeNull();
+  });
+
   it('update recalcula precios cuando cambia el costo', async () => {
     productRepo.findOne.mockResolvedValue({ ...product });
     pricingService.computeSalePrice.mockResolvedValue(20.88);
@@ -198,5 +252,74 @@ describe('CatalogService', () => {
 
     await expect(service.recalculateSalePrices([1])).resolves.toBe(1);
     expect(productRepo.save).toHaveBeenCalled();
+  });
+
+  it('getImportTemplate no incluye columnas de barcode/ubicaciones', () => {
+    const csv = service.getImportTemplate();
+    expect(csv).toContain('SKU');
+    expect(csv).toContain('OEM_CODE');
+    expect(csv).toContain('PVP_BASE');
+    expect(csv).not.toContain('BARCODE');
+    expect(csv).not.toContain('PASILLO');
+    expect(csv).not.toContain('ESTANTE');
+    expect(csv).not.toContain('NIVEL');
+    expect(csv).not.toContain('CASILLA');
+  });
+
+  it('importProducts ignora columnas eliminadas (barcode/ubicaciones)', async () => {
+    const csv = [
+      'SKU,NOMBRE,OEM_CODE,BARCODE,CATEGORIA,MARCA,PROCEDENCIA,UNIDAD,STOCK,STOCK_MINIMO,COSTO,PVP_BASE,PASILLO,ESTANTE,NIVEL,CASILLA',
+      'FA-1,Filtro,15560-PLM,P12345,Filtros,Honda,Importado,uds,10,2,12.50,18.75,A,1,2,3',
+    ].join('\n');
+    productRepo.findOne.mockResolvedValue(null);
+    productRepo.create.mockImplementation((d) => d);
+    productRepo.save.mockImplementation((d) => Promise.resolve({ id: 1, ...d }));
+
+    const result = await service.importProducts(
+      Buffer.from(csv, 'utf-8'),
+      'test.csv',
+      actor,
+      req,
+    );
+
+    expect(result.created).toBe(1);
+    expect(result.errors).toHaveLength(0);
+    const created = productRepo.create.mock.calls[0][0];
+    expect(created).toMatchObject({
+      sku: 'FA-1',
+      name: 'Filtro',
+      oemCode: '15560-PLM',
+      stock: 10,
+      minStock: 2,
+    });
+    expect(created).not.toHaveProperty('barcode');
+    expect(created).not.toHaveProperty('warehouseAisle');
+    expect(created).not.toHaveProperty('warehouseShelf');
+    expect(created).not.toHaveProperty('warehouseLevel');
+    expect(created).not.toHaveProperty('warehouseBin');
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'PRODUCT:IMPORT' }),
+    );
+  });
+
+  it('importProducts actualiza productos existentes por SKU', async () => {
+    const csv = [
+      'SKU,NOMBRE,COSTO,PVP_BASE',
+      'FA-001,Filtro Renovado,15.00,22.00',
+    ].join('\n');
+    productRepo.findOne.mockResolvedValue({ ...product });
+    productRepo.save.mockImplementation((d) => Promise.resolve(d));
+
+    const result = await service.importProducts(
+      Buffer.from(csv, 'utf-8'),
+      'test.csv',
+      actor,
+      req,
+    );
+
+    expect(result.updated).toBe(1);
+    expect(productRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ sku: 'FA-001', name: 'Filtro Renovado' }),
+    );
   });
 });

@@ -161,7 +161,8 @@ export class CatalogService {
 
   /**
    * Alta de repuesto. Si no se envía basePrice se calcula con el margen
-   * global; salePrice siempre se calcula con el IVA vigente.
+   * global; salePrice se usa tal cual si se envía, si no se calcula con el
+   * IVA vigente.
    */
   async create(
     dto: CreateProductDto,
@@ -171,7 +172,8 @@ export class CatalogService {
     const basePrice =
       dto.basePrice ??
       (await this.pricingService.computeSuggestedBasePrice(dto.costPrice));
-    const salePrice = await this.pricingService.computeSalePrice(basePrice);
+    const salePrice =
+      dto.salePrice ?? (await this.pricingService.computeSalePrice(basePrice));
     const taxRate = await this.pricingService.getTaxRate();
     const sku = dto.sku?.trim() || (await this.generateSku());
 
@@ -188,6 +190,7 @@ export class CatalogService {
       costPrice: dto.costPrice.toFixed(2),
       basePrice: basePrice.toFixed(2),
       salePrice: salePrice.toFixed(2),
+      imageUrl: dto.imageUrl ?? null,
       compat: (dto.compat ?? []).map((c) =>
         this.dataSource.manager.create(ProductCompat, {
           vehicleBrand: c.vehicleBrand,
@@ -246,6 +249,8 @@ export class CatalogService {
         dto.provenance !== undefined ? dto.provenance : product.provenance,
       unit: dto.unit ?? product.unit,
       minStock: dto.minStock ?? product.minStock,
+      imageUrl:
+        dto.imageUrl !== undefined ? dto.imageUrl : product.imageUrl,
     });
 
     if (dto.costPrice !== undefined || dto.basePrice !== undefined) {
@@ -253,10 +258,13 @@ export class CatalogService {
       const base =
         dto.basePrice ??
         (await this.pricingService.computeSuggestedBasePrice(cost));
-      const sale = await this.pricingService.computeSalePrice(base);
+      const sale =
+        dto.salePrice ?? (await this.pricingService.computeSalePrice(base));
       product.costPrice = cost.toFixed(2);
       product.basePrice = base.toFixed(2);
       product.salePrice = sale.toFixed(2);
+    } else if (dto.salePrice !== undefined) {
+      product.salePrice = dto.salePrice.toFixed(2);
     }
 
     if (dto.compat) {
@@ -346,7 +354,6 @@ export class CatalogService {
     'SKU',
     'NOMBRE',
     'OEM_CODE',
-    'BARCODE',
     'CATEGORIA',
     'MARCA',
     'PROCEDENCIA',
@@ -355,17 +362,12 @@ export class CatalogService {
     'STOCK_MINIMO',
     'COSTO',
     'PVP_BASE',
-    'PASILLO',
-    'ESTANTE',
-    'NIVEL',
-    'CASILLA',
   ];
 
   private static readonly EXAMPLE_ROW = [
     'FA-999',
     'Filtro de Combustible',
     '15560-RTA-003',
-    '7501234560099',
     'Filtros',
     'Honda',
     'Importado',
@@ -374,10 +376,6 @@ export class CatalogService {
     '2',
     '12.50',
     '18.75',
-    'A',
-    '1',
-    '2',
-    '3',
   ];
 
   /** CSV con encabezados + fila de ejemplo para importar productos. */
@@ -523,9 +521,6 @@ export class CatalogService {
       OEM: 'OEM_CODE',
       OEM_CODE: 'OEM_CODE',
       CODIGO_OEM: 'OEM_CODE',
-      BARCODE: 'BARCODE',
-      CODIGO_BARRAS: 'BARCODE',
-      CODIGODEBARRAS: 'BARCODE',
       CATEGORIA: 'CATEGORIA',
       MARCA: 'MARCA',
       PROCEDENCIA: 'PROCEDENCIA',
@@ -539,10 +534,6 @@ export class CatalogService {
       PRECIO_COSTO: 'COSTO',
       PVP_BASE: 'PVP_BASE',
       PVP: 'PVP_BASE',
-      PASILLO: 'PASILLO',
-      ESTANTE: 'ESTANTE',
-      NIVEL: 'NIVEL',
-      CASILLA: 'CASILLA',
     };
     return aliases[clean] ?? null;
   }

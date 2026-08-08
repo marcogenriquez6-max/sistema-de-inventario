@@ -37,7 +37,7 @@ export class ModuleRegistryService {
       name: 'Catálogo de productos',
       slug: 'catalog',
       enabled: true,
-      description: 'Productos, multicódigo, ubicaciones y compatibilidades.',
+      description: 'Productos, multicódigo y compatibilidades.',
       category: 'operational',
     },
     {

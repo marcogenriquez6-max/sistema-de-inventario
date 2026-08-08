@@ -287,7 +287,12 @@ export class KanbanComponent {
     }
     const id = this.editingId();
     if (id !== null) {
-      await this.svc.update(id, this.form as Partial<TaskItem>);
+      await this.svc.update(id, {
+        ...this.form,
+        dueDate: this.form.dueDate || undefined,
+        description: this.form.description || undefined,
+        assigneeId: this.form.assigneeId ?? undefined,
+      } as Partial<TaskItem>);
     } else {
       await this.svc.create({
         title: this.form.title,

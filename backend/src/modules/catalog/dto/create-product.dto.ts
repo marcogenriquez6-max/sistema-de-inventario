@@ -99,6 +99,25 @@ export class CreateProductDto {
   basePrice?: number;
 
   @ApiPropertyOptional({
+    example: 17.4,
+    description:
+      'PVP final con IVA. Si se omite, se calcula con la tasa de IVA vigente.',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  salePrice?: number;
+
+  @ApiPropertyOptional({
+    example: '/api/uploads/photo.jpg',
+    description: 'URL de la foto del producto',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  imageUrl?: string;
+
+  @ApiPropertyOptional({
     example: 5,
     description: 'Stock inicial (0 por defecto)',
   })
