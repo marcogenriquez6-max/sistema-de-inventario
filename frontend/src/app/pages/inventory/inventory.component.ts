@@ -1,11 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Paginated, Product, StockMovement } from '../../core/models';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 import { BsPipe } from '../../shared/bs.pipe';
 
 interface LowStockItem {
@@ -16,9 +18,15 @@ interface LowStockItem {
   minStock: number;
 }
 
+const PLACEHOLDER =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="#eef2f7"/><g fill="none" stroke="#b6c2d4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M36 34h48l8 16v24H28V50z"/><path d="M28 50h64"/><circle cx="48" cy="72" r="5"/><circle cx="76" cy="72" r="5"/></g></svg>`,
+  );
+
 @Component({
   selector: 'app-inventory',
-  imports: [FormsModule, CommonModule, ExportButtonComponent, BsPipe],
+  imports: [FormsModule, CommonModule, RouterLink, ExportButtonComponent, ConfirmDialogComponent, BsPipe],
   template: `
     <div class="page">
       <div class="page-header">
@@ -67,6 +75,11 @@ interface LowStockItem {
               <option value="low">Stock bajo</option>
               <option value="out">Agotado</option>
             </select>
+            <select class="select filter" [(ngModel)]="activeFilter" (change)="applyFilter()">
+              <option value="all">Activos e inactivos</option>
+              <option value="active">Solo activos</option>
+              <option value="inactive">Solo inactivos</option>
+            </select>
           </div>
         </div>
 
@@ -74,23 +87,37 @@ interface LowStockItem {
           <table class="data">
             <thead>
               <tr>
+                <th></th>
                 <th>SKU</th>
                 <th>Producto</th>
+                <th>Procedencia</th>
                 <th>Stock</th>
                 <th>Mínimo</th>
                 <th>Estado</th>
                 <th>Costo</th>
-                <th>PVP</th>
+                <th>Sin IVA</th>
+                <th>Con IVA</th>
                 <th>Kardex</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               @for (p of filteredProducts(); track p.id) {
                 <tr class="product-row" [class.selected]="selectedProductId() === p.id" (click)="selectProduct(p)">
+                  <td>
+                    <span class="cell-thumb" [style.background-image]="thumb(p)"></span>
+                  </td>
                   <td class="mono">{{ p.sku }}</td>
                   <td>
                     <strong>{{ p.name }}</strong>
                     <div class="small muted">{{ p.brand || '—' }}</div>
+                  </td>
+                  <td>
+                    @if (p.provenance) {
+                      <span class="chip chip-neutral">{{ p.provenance }}</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
                   </td>
                   <td class="qty" [class.qty-neg]="p.stock <= 0">{{ p.stock }}</td>
                   <td>{{ p.minStock }}</td>
@@ -98,14 +125,28 @@ interface LowStockItem {
                     <span [class]="'chip ' + stockClass(p)">{{ stockLabel(p) }}</span>
                   </td>
                   <td>{{ p.costPrice | bs }}</td>
-                  <td>{{ p.salePrice | bs }}</td>
+                  <td>{{ p.basePrice | bs }}</td>
+                  <td><strong>{{ p.salePrice | bs }}</strong></td>
                   <td>
-                    <span class="link">{{ selectedProductId() === p.id ? 'Ocultar kardex' : 'Ver kardex' }}</span>
+                    <span class="link">{{ selectedProductId() === p.id ? 'Ocultar' : 'Kardex' }}</span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      @if (canManage()) {
+                        <a class="btn btn-ghost btn-sm" [routerLink]="['/catalog', p.id]">Editar</a>
+                        <button class="btn btn-ghost btn-sm" (click)="toggleActive($event, p)">
+                          {{ p.isActive ? 'Baja' : 'Reactivar' }}
+                        </button>
+                      }
+                      @if (canDelete()) {
+                        <button class="btn btn-ghost btn-sm danger" (click)="removeProduct($event, p)">Eliminar</button>
+                      }
+                    </div>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8">
+                  <td colspan="12">
                     <div class="empty">
                       <div class="icon">📦</div>
                       No hay productos que coincidan con la búsqueda.
@@ -145,7 +186,7 @@ interface LowStockItem {
                   <tr>
                     <td>{{ m.createdAt | date: 'short' }}</td>
                     <td>
-                      <span [class]="'chip ' + movementClass(m.movementType)">{{ m.movementType }}</span>
+                      <span [class]="'chip ' + movementClass(m.movementType)">{{ movementLabel(m.movementType) }}</span>
                     </td>
                     <td [class]="m.quantity < 0 ? 'qty-neg' : 'qty-pos'">
                       {{ m.quantity > 0 ? '+' : '' }}{{ m.quantity }}
@@ -245,6 +286,8 @@ interface LowStockItem {
           </form>
         </div>
       }
+
+      <app-confirm-dialog #confirm />
     </div>
   `,
   styles: `
@@ -273,6 +316,29 @@ interface LowStockItem {
     }
     .product-row.selected {
       background: var(--primary-soft);
+    }
+    .cell-thumb {
+      display: block;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background-size: cover;
+      background-position: center;
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+    .row-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+    .row-actions .btn.danger {
+      color: var(--danger);
+    }
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12.5px;
     }
     .qty {
       font-weight: 650;
@@ -312,6 +378,8 @@ export class InventoryComponent {
   private toast = inject(ToastService);
 
   readonly canManage = computed(() => this.auth.hasRole('ADMIN', 'INVENTORY_MANAGER'));
+  readonly canDelete = computed(() => this.auth.hasRole('ADMIN'));
+  private confirm = viewChild(ConfirmDialogComponent);
 
   lowStock = signal<LowStockItem[]>([]);
   products = signal<Product[]>([]);
@@ -323,6 +391,7 @@ export class InventoryComponent {
 
   q = '';
   stockFilter = 'all';
+  activeFilter = 'all';
 
   formProductId: number | null = null;
   movementType = 'ADJUST';
@@ -353,6 +422,8 @@ export class InventoryComponent {
         if (this.stockFilter === 'ok') return p.stock > 0;
         if (this.stockFilter === 'low') return p.stock > 0 && p.stock <= p.minStock;
         if (this.stockFilter === 'out') return p.stock <= 0;
+        if (this.activeFilter === 'active') return p.isActive !== false;
+        if (this.activeFilter === 'inactive') return p.isActive === false;
         return true;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -411,6 +482,58 @@ export class InventoryComponent {
     return 'OK';
   }
 
+  imageUrl(url: string | null): string {
+    if (!url) return '';
+    const origin = (window as { __API_ORIGIN__?: string }).__API_ORIGIN__;
+    if (origin && url.startsWith('/api/')) return `${origin}${url}`;
+    return url;
+  }
+
+  thumb(p: Product): string {
+    return `url(${this.imageUrl(p.imageUrl) || PLACEHOLDER})`;
+  }
+
+  async toggleActive(event: Event, p: Product): Promise<void> {
+    event.stopPropagation();
+    const next = !p.isActive;
+    const ok = await this.confirm()?.open(
+      next ? 'Reactivar producto' : 'Dar de baja',
+      next
+        ? `¿Reactivar "${p.name}"?`
+        : `¿Dar de baja "${p.name}"? No aparecerá en el POS ni en ventas nuevas.`,
+      next ? 'Reactivar' : 'Dar de baja',
+    );
+    if (!ok) return;
+    this.api
+      .patch(`/products/${p.id}`, { isActive: next })
+      .subscribe({
+        next: () => {
+          this.toast.success(next ? 'Producto reactivado' : 'Producto dado de baja');
+          this.loadProducts();
+          this.loadLowStock();
+        },
+        error: () => this.toast.error('No se pudo cambiar el estado'),
+      });
+  }
+
+  async removeProduct(event: Event, p: Product): Promise<void> {
+    event.stopPropagation();
+    const ok = await this.confirm()?.open(
+      'Eliminar producto',
+      `¿Eliminar definitivamente "${p.name}" (${p.sku})? Esta acción no se puede deshacer.`,
+      'Eliminar',
+    );
+    if (!ok) return;
+    this.api.delete(`/products/${p.id}`).subscribe({
+      next: () => {
+        this.toast.success('Producto eliminado');
+        this.loadProducts();
+        this.loadLowStock();
+      },
+      error: () => this.toast.error('No se pudo eliminar el producto'),
+    });
+  }
+
   async submitAdjust(): Promise<void> {
     const productId = this.formProductId;
     if (productId === null) {
@@ -464,6 +587,23 @@ export class InventoryComponent {
         return 'chip-info';
       default:
         return 'chip-neutral';
+    }
+  }
+
+  movementLabel(type: string): string {
+    switch (type?.toUpperCase()) {
+      case 'SALE':
+        return 'Venta';
+      case 'PURCHASE':
+        return 'Compra';
+      case 'ADJUST':
+        return 'Ajuste';
+      case 'MERMA':
+        return 'Merma';
+      case 'RETURN':
+        return 'Devolución';
+      default:
+        return type ?? '—';
     }
   }
 }

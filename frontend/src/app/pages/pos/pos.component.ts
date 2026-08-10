@@ -30,6 +30,12 @@ function emptyCustomer(): NewCustomerForm {
   return { name: '', documentType: 'CI', documentNumber: '', phone: '' };
 }
 
+const PLACEHOLDER =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="160"><rect width="200" height="160" fill="#eef2f7"/><g fill="none" stroke="#b6c2d4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M60 55h80l14 26v40H46V81z"/><path d="M46 81h108"/><circle cx="80" cy="114" r="8"/><circle cx="128" cy="114" r="8"/></g><text x="100" y="30" font-family="sans-serif" font-size="12" fill="#8fa0b8" text-anchor="middle">SIN FOTO</text></svg>`,
+  );
+
 @Component({
   selector: 'app-pos',
   imports: [FormsModule, CommonModule, BsPipe],
@@ -83,12 +89,15 @@ function emptyCustomer(): NewCustomerForm {
               <div class="product-card">
                 <div
                   class="product-image"
-                  [style.background-image]="imageUrl(product.imageUrl) ? 'url(' + imageUrl(product.imageUrl) + ')' : 'url(/assets/product-placeholder.png)'"
+                  [style.background-image]="cardImage(product)"
                 ></div>
                 <div class="product-body">
                   <div class="product-title">{{ product.name }}</div>
                   <div class="product-meta">{{ product.sku }} · {{ product.brand || 'Marca' }}</div>
-                  <div class="product-price">{{ product.salePrice | bs }}</div>
+                  <div class="product-price">
+                    {{ unitPrice(product) | bs }}
+                    <span class="price-tag">{{ taxing() ? 'con IVA' : 'sin IVA' }}</span>
+                  </div>
                   <div class="product-stock" [class.out-of-stock]="product.stock <= 0">
                     {{ product.stock > 0 ? 'Stock ' + product.stock : 'Agotado' }}
                   </div>
@@ -133,9 +142,12 @@ function emptyCustomer(): NewCustomerForm {
           <div class="cart-lines">
             @for (line of cart(); track line.product.id) {
               <div class="line">
+                <div class="line-thumb" [style.background-image]="cardImage(line.product)"></div>
                 <div class="line-info">
                   <strong>{{ line.product.name }}</strong>
-                  <div class="small muted">{{ line.product.salePrice | bs }} c/u</div>
+                  <div class="small muted">
+                    {{ unitPrice(line.product) | bs }} c/u {{ taxing() ? 'con IVA' : 'sin IVA' }}
+                  </div>
                 </div>
                 <div class="line-ops">
                   <button class="btn btn-ghost btn-xs" (click)="setQty(line, line.qty - 1)">−</button>
@@ -143,31 +155,38 @@ function emptyCustomer(): NewCustomerForm {
                   <button class="btn btn-ghost btn-xs" (click)="setQty(line, line.qty + 1)">+</button>
                   <button class="btn btn-ghost btn-xs" (click)="remove(line.product.id)">✕</button>
                 </div>
-                <span class="line-total">{{ num(line.product.salePrice) * line.qty | bs }}</span>
+                <span class="line-total">{{ lineTotal(line) | bs }}</span>
               </div>
             }
           </div>
 
           <div class="totals">
             <div class="t-row">
-              <span>Subtotal</span><span>{{ subtotal() | bs }}</span>
+              <span>Subtotal (sin IVA)</span><span>{{ subtotal() | bs }}</span>
             </div>
-            <div class="t-row">
-              <span>IVA ({{ taxRate }}%)</span><span>{{ taxAmount() | bs }}</span>
-            </div>
+            @if (taxing()) {
+              <div class="t-row">
+                <span>IVA ({{ taxRate }}%)</span><span>{{ taxAmount() | bs }}</span>
+              </div>
+            }
             <div class="t-row total">
-              <span>Total</span><span>{{ total() | bs }}</span>
+              <span>{{ taxing() ? 'Total (con IVA)' : 'Total (sin IVA)' }}</span>
+              <span>{{ total() | bs }}</span>
             </div>
+            @if (!taxing()) {
+              <div class="t-note">Nota de venta sin IVA. Seleccione Factura para cobrar con IVA.</div>
+            }
           </div>
 
           <div class="checkout-body">
             <div class="form-grid">
               <div class="field">
                 <label>Tipo de documento</label>
-                <select class="select" [(ngModel)]="docType" name="docType">
-                  <option value="NOTA">Nota de venta</option>
-                  <option value="FACTURA">Factura</option>
+                <select class="select" [ngModel]="docType()" name="docType" (ngModelChange)="docType.set($event)">
+                  <option value="NOTA">Nota de venta (sin IVA)</option>
+                  <option value="FACTURA">Factura (con IVA)</option>
                 </select>
+                <div class="small muted">{{ taxing() ? 'La venta se cobrará con IVA incluido.' : 'La venta se cobrará sin IVA.' }}</div>
               </div>
             </div>
 
@@ -307,7 +326,7 @@ function emptyCustomer(): NewCustomerForm {
 
           <div class="receipt" #receiptEl>
             <div class="receipt-head">
-              <img class="receipt-logo" src="logo.jpg" alt="Repuestos ERP" />
+              <img class="receipt-logo" src="/logo.jpg" alt="Repuestos ERP" />
               <div class="receipt-brand">Repuestos ERP</div>
               <div class="receipt-subtitle">Sistema de repuestos y accesorios</div>
               <div class="receipt-line">RUC: 0000000000 · Telf: 000-0000</div>
@@ -316,7 +335,7 @@ function emptyCustomer(): NewCustomerForm {
             <div class="receipt-rule"></div>
 
             <div class="receipt-meta">
-              <div class="receipt-row"><span>Documento</span><strong>{{ receipt()!.docType }} {{ receipt()!.docNumber }}</strong></div>
+              <div class="receipt-row"><span>Documento</span><strong>{{ receipt()!.docType === 'FACTURA' ? 'FACTURA' : 'NOTA DE VENTA' }} {{ receipt()!.docNumber }}</strong></div>
               <div class="receipt-row"><span>Fecha</span><span>{{ receipt()!.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span></div>
               <div class="receipt-row"><span>Atendido por</span><span>{{ cashierName() }}</span></div>
               <div class="receipt-row"><span>Cliente</span><span>{{ receipt()!.customerName }}</span></div>
@@ -336,7 +355,10 @@ function emptyCustomer(): NewCustomerForm {
               </div>
               @for (it of receipt()!.items; track it.id) {
                 <div class="r-item">
-                  <span class="r-name">{{ it.productName }}</span>
+                  <span class="r-name-wrap">
+                    <img class="r-img" [src]="imgFor(it.productId)" alt="" />
+                    <span class="r-name">{{ it.productName }}</span>
+                  </span>
                   <span>{{ it.quantity }}</span>
                   <span>{{ it.unitSale | bs }}</span>
                   <span class="r-total">{{ it.lineTotal | bs }}</span>
@@ -348,8 +370,10 @@ function emptyCustomer(): NewCustomerForm {
 
             <div class="receipt-totals">
               <div class="r-row"><span>Subtotal</span><span>{{ receipt()!.subtotal | bs }}</span></div>
-              <div class="r-row"><span>IVA ({{ receipt()!.taxRate }}%)</span><span>{{ receipt()!.taxAmount | bs }}</span></div>
-              <div class="r-row r-total-row"><span>TOTAL</span><span>{{ receipt()!.total | bs }}</span></div>
+              @if (receipt()!.docType === 'FACTURA') {
+                <div class="r-row"><span>IVA ({{ receipt()!.taxRate }}%)</span><span>{{ receipt()!.taxAmount | bs }}</span></div>
+              }
+              <div class="r-row r-total-row"><span>TOTAL {{ receipt()!.docType === 'FACTURA' ? '(con IVA)' : '(sin IVA)' }}</span><span>{{ receipt()!.total | bs }}</span></div>
               @if (received() > 0) {
                 <div class="r-row"><span>Recibido</span><span>{{ received() | bs }}</span></div>
                 <div class="r-row"><span>Cambio</span><span>{{ change() | bs }}</span></div>
@@ -361,7 +385,11 @@ function emptyCustomer(): NewCustomerForm {
             <div class="receipt-foot">
               ¡Gracias por su compra!
               <br />
-              Este documento no es factura fiscal.
+              @if (receipt()!.docType === 'FACTURA') {
+                Documento con IVA incluido.
+              } @else {
+                Documento sin IVA · No es factura fiscal.
+              }
             </div>
           </div>
         </div>
@@ -461,6 +489,12 @@ function emptyCustomer(): NewCustomerForm {
       font-weight: 700;
       color: var(--primary);
     }
+    .price-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-left: 4px;
+    }
     .product-stock {
       font-size: 13px;
       color: var(--success);
@@ -513,11 +547,29 @@ function emptyCustomer(): NewCustomerForm {
     }
     .line {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 44px 1fr auto auto;
       gap: 8px;
       align-items: center;
       padding: 12px 0;
       border-bottom: 1px dashed var(--border);
+    }
+    .line-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background-size: cover;
+      background-position: center;
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+    .line-info {
+      min-width: 0;
+    }
+    .line-info strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .line-ops {
       display: flex;
@@ -555,6 +607,15 @@ function emptyCustomer(): NewCustomerForm {
       border-top: 1px solid var(--border);
       margin-top: 8px;
       padding-top: 10px;
+    }
+    .t-note {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: var(--surface-2);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
     }
     .checkout-body {
       padding: 0 16px 8px;
@@ -741,6 +802,21 @@ function emptyCustomer(): NewCustomerForm {
     .r-item {
       padding: 1px 0;
     }
+    .r-name-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .r-img {
+      width: 26px;
+      height: 26px;
+      border-radius: 4px;
+      object-fit: cover;
+      border: 1px solid #ddd;
+      background: #f2f2f2;
+      flex-shrink: 0;
+    }
     .r-name {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -779,12 +855,13 @@ export class PosComponent {
   searched = signal(false);
   results = signal<Product[]>([]);
   cart = signal<CartLine[]>([]);
-  docType = 'NOTA';
+  docType = signal<'NOTA' | 'FACTURA'>('NOTA');
   busy = signal(false);
   taxRate = 16;
   brand = signal('');
   category = signal('');
   availability = signal<'all' | 'in-stock'>('all');
+  private cartImages = new Map<number, string>();
 
   customerQuery = '';
   customerResults = signal<Customer[]>([]);
@@ -819,14 +896,21 @@ export class PosComponent {
       .sort((a, b) => a.name.localeCompare(b.name)),
   );
 
+  readonly taxing = computed(() => this.docType() === 'FACTURA');
+
   readonly subtotal = computed(() =>
     this.cart().reduce((a, l) => a + l.qty * Number(l.product.basePrice), 0),
   );
 
-  readonly taxAmount = computed(() => (this.subtotal() * this.taxRate) / 100);
+  readonly taxAmount = computed(() =>
+    this.cart().reduce(
+      (a, l) => a + l.qty * this.round2(Number(l.product.salePrice) - Number(l.product.basePrice)),
+      0,
+    ),
+  );
 
   readonly total = computed(() =>
-    this.cart().reduce((a, l) => a + l.qty * Number(l.product.salePrice), 0),
+    this.taxing() ? this.subtotal() + this.taxAmount() : this.subtotal(),
   );
 
   readonly change = computed(() => Math.max(0, this.received() - this.total()));
@@ -878,6 +962,7 @@ export class PosComponent {
   }
 
   add(p: Product): void {
+    this.cartImages.set(p.id, p.imageUrl ?? '');
     const line = this.cart().find((l) => l.product.id === p.id);
     if (line) {
       this.setQty(line, line.qty + 1);
@@ -912,11 +997,32 @@ export class PosComponent {
     return Number(v) || 0;
   }
 
+  round2(v: number): number {
+    return Math.round(v * 100) / 100;
+  }
+
+  unitPrice(p: Product): number {
+    return this.taxing() ? Number(p.salePrice) : Number(p.basePrice);
+  }
+
+  lineTotal(line: CartLine): number {
+    return this.round2(this.unitPrice(line.product) * line.qty);
+  }
+
   imageUrl(url: string | null): string {
     if (!url) return '';
     const origin = (window as { __API_ORIGIN__?: string }).__API_ORIGIN__;
     if (origin && url.startsWith('/api/')) return `${origin}${url}`;
     return url;
+  }
+
+  cardImage(p: Product): string {
+    return `url(${this.imageUrl(p.imageUrl) || PLACEHOLDER})`;
+  }
+
+  imgFor(productId: number): string {
+    const url = this.cartImages.get(productId);
+    return this.imageUrl(url ?? '') || PLACEHOLDER;
   }
 
   docText(c: Customer): string {
@@ -998,7 +1104,7 @@ export class PosComponent {
     const customerDoc = selected?.documentNumber || undefined;
 
     const payload = {
-      docType: this.docType,
+      docType: this.docType(),
       customerName,
       customerDoc,
       items: this.cart().map((l) => ({ productId: l.product.id, quantity: l.qty })),

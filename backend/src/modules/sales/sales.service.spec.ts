@@ -137,7 +137,8 @@ describe('SalesService', () => {
       const result = await service.createSale(dto, actor, req);
 
       expect(result.document.docNumber).toBe('NOT-00001');
-      expect(result.document.total).toBe('52.20');
+      expect(result.document.total).toBe('45.00');
+      expect(result.document.taxAmount).toBe('0.00');
       expect(product.stock).toBe(17);
       expect(manager.save).toHaveBeenCalled();
       expect(auditService.record).toHaveBeenCalledWith(
@@ -150,6 +151,21 @@ describe('SalesService', () => {
         expect.any(String),
         expect.any(Object),
       );
+    });
+
+    it('cobra IVA cuando el documento es FACTURA', async () => {
+      mockLockedProducts([product]);
+
+      const result = await service.createSale(
+        { ...(dto as Record<string, unknown>), docType: 'FACTURA' } as never,
+        actor,
+        req,
+      );
+
+      expect(result.document.docNumber).toBe('FAC-00001');
+      expect(result.document.subtotal).toBe('45.00');
+      expect(result.document.taxAmount).toBe('7.20');
+      expect(result.document.total).toBe('52.20');
     });
 
     it('lanza 404 si un producto no existe', async () => {

@@ -249,6 +249,7 @@ export class CatalogService {
         dto.provenance !== undefined ? dto.provenance : product.provenance,
       unit: dto.unit ?? product.unit,
       minStock: dto.minStock ?? product.minStock,
+      isActive: dto.isActive ?? product.isActive,
       imageUrl:
         dto.imageUrl !== undefined ? dto.imageUrl : product.imageUrl,
     });

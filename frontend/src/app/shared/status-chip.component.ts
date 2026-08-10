@@ -17,16 +17,37 @@ const MAP: Record<string, string> = {
   IN: 'chip-success',
 };
 
+const LABELS: Record<string, string> = {
+  COMPLETED: 'Completado',
+  RECEIVED: 'Recibido',
+  OPEN: 'Abierta',
+  ACTIVE: 'Activo',
+  VOIDED: 'Anulada',
+  CANCELLED: 'Anulada',
+  CLOSED: 'Cerrada',
+  INACTIVE: 'Inactivo',
+  PENDING: 'Pendiente',
+  LOW_STOCK: 'Stock bajo',
+  TRUE: 'Activo',
+  FALSE: 'Inactivo',
+  OUT: 'Salida',
+  IN: 'Entrada',
+};
+
 @Component({
   selector: 'app-status-chip',
   template: `<span class="chip {{ class() }}">{{ label() }}</span>`,
 })
 export class StatusChipComponent {
   readonly value = input.required<string>();
-  readonly label = computed(() => this.display(this.value()));
+  readonly label = computed(() => this.translate(this.value()));
   readonly class = computed(() => MAP[this.value()?.toUpperCase()] ?? 'chip-neutral');
 
-  private display(v: string): string {
+  private translate(v: string): string {
+    return LABELS[v?.toUpperCase()] ?? this.titleCase(v);
+  }
+
+  private titleCase(v: string): string {
     return v
       .replace(/_/g, ' ')
       .toLowerCase()

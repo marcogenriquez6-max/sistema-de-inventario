@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsInt,
   IsNumber,
   IsOptional,
@@ -131,6 +132,14 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   minStock?: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Estado activo/inactivo del repuesto',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({ type: [CompatEntryDto] })
   @IsOptional()

@@ -92,7 +92,10 @@ export class SalesService {
         }
 
         const unitBase = Number(product.basePrice);
-        const unitSale = Number(product.salePrice);
+        const unitSale =
+          dto.docType === 'FACTURA'
+            ? Number(product.salePrice)
+            : Number(product.basePrice);
         const unitCost = Number(product.costPrice);
         const taxAmount = this.pricingService.round(unitSale - unitBase);
 
@@ -385,10 +388,12 @@ export class SalesService {
       pdf.moveDown(0.4);
     };
     drawTotal('Subtotal:', money(doc.subtotal));
-    drawTotal(
-      `IVA (${Number(doc.taxRate).toFixed(2)}%):`,
-      money(doc.taxAmount),
-    );
+    if (Number(doc.taxAmount) > 0) {
+      drawTotal(
+        `IVA (${Number(doc.taxRate).toFixed(2)}%):`,
+        money(doc.taxAmount),
+      );
+    }
     drawTotal('TOTAL A PAGAR:', money(doc.total), true);
 
     pdf.moveDown(2);

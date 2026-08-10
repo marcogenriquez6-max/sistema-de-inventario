@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { Paginated, Product } from '../../core/models';
 import { StatusChipComponent } from '../../shared/status-chip.component';
 import { ExportButtonComponent } from '../../shared/export-button.component';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 import { BsPipe } from '../../shared/bs.pipe';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -24,6 +25,7 @@ interface Facets {
     StatusChipComponent,
     CommonModule,
     ExportButtonComponent,
+    ConfirmDialogComponent,
     BsPipe,
   ],
   template: `
@@ -96,7 +98,8 @@ interface Facets {
                 <th>Procedencia</th>
                 <th>Stock</th>
                 <th>Costo</th>
-                <th>PVP</th>
+                <th>Precio sin IVA</th>
+                <th>Precio con IVA</th>
                 <th>Estado</th>
                 <th></th>
               </tr>
@@ -125,17 +128,28 @@ interface Facets {
                     <span class="small muted">/ {{ p.minStock }}</span>
                   </td>
                   <td>{{ p.costPrice | bs }}</td>
+                  <td>{{ p.basePrice | bs }}</td>
                   <td>
                     <strong>{{ p.salePrice | bs }}</strong>
                   </td>
                   <td><app-status-chip [value]="p.isActive ? 'TRUE' : 'FALSE'" /></td>
                   <td>
-                    <a class="btn btn-ghost btn-sm" [routerLink]="['/catalog', p.id]">Editar</a>
+                    <div class="row-actions">
+                      @if (canEdit()) {
+                        <a class="btn btn-ghost btn-sm" [routerLink]="['/catalog', p.id]">Editar</a>
+                        <button class="btn btn-ghost btn-sm" (click)="toggleActive(p)">
+                          {{ p.isActive ? 'Dar de baja' : 'Reactivar' }}
+                        </button>
+                      }
+                      @if (canDelete()) {
+                        <button class="btn btn-ghost btn-sm danger" (click)="removeProduct(p)">Eliminar</button>
+                      }
+                    </div>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="10">
+                  <td colspan="11">
                     <div class="empty">
                       <div class="icon">🔍</div>
                       Sin resultados
@@ -158,6 +172,7 @@ interface Facets {
           </div>
         </div>
       </div>
+      <app-confirm-dialog #confirm />
     </div>
   `,
   styles: `
@@ -201,6 +216,15 @@ interface Facets {
       padding: 4px 10px;
       font-size: 12.5px;
     }
+    .row-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+    .row-actions .btn.danger {
+      color: var(--danger);
+    }
     .text-warn {
       color: var(--warning);
       font-weight: 650;
@@ -214,6 +238,8 @@ export class CatalogListComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   readonly canEdit = computed(() => this.auth.hasRole('ADMIN', 'INVENTORY_MANAGER'));
+  readonly canDelete = computed(() => this.auth.hasRole('ADMIN'));
+  private confirm = viewChild(ConfirmDialogComponent);
 
   items = signal<Product[]>([]);
   meta = signal({ page: 1, pageSize: 20, totalItems: 0, totalPages: 0 });
@@ -267,6 +293,45 @@ export class CatalogListComponent {
     this.filters = { q: '', brand: '', category: '', provenance: '', lowStock: false };
     this.loadFacets();
     this.load(1);
+  }
+
+  async toggleActive(p: Product): Promise<void> {
+    const next = !p.isActive;
+    const ok = await this.confirm()?.open(
+      next ? 'Reactivar producto' : 'Dar de baja',
+      next
+        ? `¿Reactivar "${p.name}"?`
+        : `¿Dar de baja "${p.name}"? No aparecerá en el POS ni en ventas nuevas.`,
+      next ? 'Reactivar' : 'Dar de baja',
+    );
+    if (!ok) return;
+    this.api
+      .patch(`/products/${p.id}`, { isActive: next })
+      .subscribe({
+        next: () => {
+          this.toast.success(next ? 'Producto reactivado' : 'Producto dado de baja');
+          this.load(1);
+          this.loadFacets();
+        },
+        error: () => this.toast.error('No se pudo cambiar el estado'),
+      });
+  }
+
+  async removeProduct(p: Product): Promise<void> {
+    const ok = await this.confirm()?.open(
+      'Eliminar producto',
+      `¿Eliminar definitivamente "${p.name}" (${p.sku})? Esta acción no se puede deshacer.`,
+      'Eliminar',
+    );
+    if (!ok) return;
+    this.api.delete(`/products/${p.id}`).subscribe({
+      next: () => {
+        this.toast.success('Producto eliminado');
+        this.load(1);
+        this.loadFacets();
+      },
+      error: () => this.toast.error('No se pudo eliminar el producto'),
+    });
   }
 
   downloadTemplate(): void {
