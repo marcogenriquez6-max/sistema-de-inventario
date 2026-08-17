@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, timeout, retry } from 'rxjs';
 import { ApiEnvelope } from '../models';
 
 export interface QueryParams {
@@ -24,7 +24,11 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   private unwrap<T>(obs: Observable<ApiEnvelope<T>>): Observable<T> {
-    return obs.pipe(map((env) => env.data));
+    return obs.pipe(
+      retry({ count: 2, delay: 500 }),
+      timeout(30_000),
+      map((env) => env.data),
+    );
   }
 
   private params(query?: QueryParams): HttpParams {
@@ -58,7 +62,9 @@ export class ApiService {
   }
 
   rawPost<T>(path: string, body?: unknown): Observable<T> {
-    return this.http.post<T>(this.baseUrl + path, body ?? {});
+    return this.http.post<T>(this.baseUrl + path, body ?? {}).pipe(
+      timeout(30_000),
+    );
   }
 
   upload<T>(path: string, file: File): Observable<T> {
@@ -70,6 +76,8 @@ export class ApiService {
   }
 
   download(path: string): Observable<Blob> {
-    return this.http.get(this.baseUrl + path, { responseType: 'blob' });
+    return this.http.get(this.baseUrl + path, { responseType: 'blob' }).pipe(
+      timeout(60_000),
+    );
   }
 }

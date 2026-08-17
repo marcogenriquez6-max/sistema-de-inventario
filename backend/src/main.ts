@@ -23,9 +23,9 @@ async function bootstrap(): Promise<void> {
   app.set('trust proxy', 1);
   // Timeouts de servidor contra slowloris y conexiones lentas.
   const server = app.getHttpServer();
-  server.requestTimeout = 30_000;
-  server.headersTimeout = 35_000;
-  server.keepAliveTimeout = 5_000;
+  server.requestTimeout = 120_000;
+  server.headersTimeout = 125_000;
+  server.keepAliveTimeout = 65_000;
 
   // CORS restringido a orígenes configurados.
   const origins = (

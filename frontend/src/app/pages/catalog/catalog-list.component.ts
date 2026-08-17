@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, viewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Paginated, Product } from '../../core/models';
@@ -54,7 +55,7 @@ interface Facets {
             class="input search"
             placeholder="Buscar por SKU, OEM, código o nombre…"
             [(ngModel)]="filters.q"
-            (keyup.enter)="load(1)"
+            (ngModelChange)="onSearchChange()"
           />
 
           <select class="input" [(ngModel)]="filters.brand" (ngModelChange)="load(1)">
@@ -83,11 +84,13 @@ interface Facets {
             Solo stock bajo
           </label>
 
-          <button class="btn btn-primary" (click)="load(1)">Buscar</button>
           <button class="btn btn-ghost" (click)="reset()">Limpiar</button>
         </div>
 
         <div class="table-wrap">
+          @if (loading()) {
+            <div class="loading-bar">Cargando…</div>
+          }
           <table class="data">
             <thead>
               <tr>
@@ -97,7 +100,6 @@ interface Facets {
                 <th>Categoría</th>
                 <th>Procedencia</th>
                 <th>Stock</th>
-                <th>Costo</th>
                 <th>Precio sin IVA</th>
                 <th>Precio con IVA</th>
                 <th>Estado</th>
@@ -127,7 +129,6 @@ interface Facets {
                     </span>
                     <span class="small muted">/ {{ p.minStock }}</span>
                   </td>
-                  <td>{{ p.costPrice | bs }}</td>
                   <td>{{ p.basePrice | bs }}</td>
                   <td>
                     <strong>{{ p.salePrice | bs }}</strong>
@@ -149,7 +150,7 @@ interface Facets {
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="11">
+                  <td colspan="10">
                     <div class="empty">
                       <div class="icon">🔍</div>
                       Sin resultados
@@ -232,14 +233,25 @@ interface Facets {
     .chip-neutral {
       font-size: 12px;
     }
+    .loading-bar {
+      padding: 12px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
   `,
 })
-export class CatalogListComponent {
+export class CatalogListComponent implements OnDestroy {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   readonly canEdit = computed(() => this.auth.hasRole('ADMIN', 'INVENTORY_MANAGER'));
   readonly canDelete = computed(() => this.auth.hasRole('ADMIN'));
   private confirm = viewChild(ConfirmDialogComponent);
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private loadSub: Subscription | null = null;
+  loading = signal(false);
 
   items = signal<Product[]>([]);
   meta = signal({ page: 1, pageSize: 20, totalItems: 0, totalPages: 0 });
@@ -266,6 +278,16 @@ export class CatalogListComponent {
     this.load(1);
   }
 
+  ngOnDestroy(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    if (this.loadSub) this.loadSub.unsubscribe();
+  }
+
+  onSearchChange(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.load(1), 350);
+  }
+
   loadFacets(): void {
     this.api.get<Facets>('/products/facets').subscribe({
       next: (f) => this.facets.set(f),
@@ -273,7 +295,9 @@ export class CatalogListComponent {
   }
 
   load(page: number): void {
-    this.api
+    if (this.loadSub) this.loadSub.unsubscribe();
+    this.loading.set(true);
+    this.loadSub = this.api
       .get<Paginated<Product>>('/products', {
         page,
         pageSize: 20,
@@ -283,9 +307,12 @@ export class CatalogListComponent {
         provenance: this.filters.provenance || undefined,
         lowStock: this.filters.lowStock ? 1 : undefined,
       })
-      .subscribe((res) => {
-        this.items.set(res.items);
-        this.meta.set(res.meta);
+      .subscribe({
+        next: (res) => {
+          this.items.set(res.items);
+          this.meta.set(res.meta);
+        },
+        complete: () => this.loading.set(false),
       });
   }
 

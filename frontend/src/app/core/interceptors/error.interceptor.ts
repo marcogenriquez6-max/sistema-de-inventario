@@ -1,7 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
+import { AuthService } from '../services/auth.service';
 import { ApiError } from '../models';
 
 function messageOf(err: HttpErrorResponse): string {
@@ -17,10 +18,35 @@ function messageOf(err: HttpErrorResponse): string {
   return 'Error inesperado';
 }
 
+let isRefreshing = false;
+
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const toast = inject(ToastService);
+  const auth = inject(AuthService);
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
+      if (err.status === 401 && !req.url.includes('/auth/login') && !req.url.includes('/auth/refresh')) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          return from(auth.refresh()).pipe(
+            switchMap((success) => {
+              isRefreshing = false;
+              if (success) {
+                const newToken = auth.token();
+                const retryReq = req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } });
+                return next(retryReq);
+              }
+              toast.error(messageOf(err));
+              return throwError(() => err);
+            }),
+            catchError(() => {
+              isRefreshing = false;
+              toast.error(messageOf(err));
+              return throwError(() => err);
+            }),
+          );
+        }
+      }
       if (err.status === 401 && req.url.includes('/auth/login')) {
         toast.error(messageOf(err));
       } else if (err.status >= 400) {
